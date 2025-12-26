@@ -61,15 +61,11 @@ int WINAPI WinMain(
     // ウィンドウに設定
     SetMenu(hWnd, hMenuBar);
 
-    // ----------------------------
     // 表示
-    // ----------------------------
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
-    // ----------------------------
     // メッセージループ
-    // ----------------------------
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
@@ -90,8 +86,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN:
-            MessageBox(hWnd, TEXT("「開く」が選ばれました"),
-                       TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("「開く」が選ばれました"), TEXT("メニュー"), MB_OK);
             break;
 
         case ID_FILE_EXIT:
@@ -99,13 +94,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_EDIT_COPY:
-            MessageBox(hWnd, TEXT("コピー"),
-                       TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("コピー"), TEXT("メニュー"), MB_OK);
             break;
 
         case ID_EDIT_PASTE:
-            MessageBox(hWnd, TEXT("貼り付け"),
-                       TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("貼り付け"), TEXT("メニュー"), MB_OK);
             break;
         }
         return 0;
