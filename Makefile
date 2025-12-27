@@ -7,7 +7,7 @@ MAIN = Main.cpp
 SRCS = $(wildcard src/*.cpp)
 OBJS = $(SRCS:.cpp=.o) Main.o
 
-TARGET = test.exe
+TARGET = cryppto.exe
 
 all: $(TARGET)
 
