@@ -124,7 +124,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN:
-            MessageBox(hWnd, TEXT("「開く」が選ばれました"), TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("「開く」が選ばれました"), TEXT("Menu"), MB_OK);
             break;
 
         case ID_SVP_GENERATE:
@@ -138,11 +138,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_EDIT_COPY:
-            MessageBox(hWnd, TEXT("コピー"), TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("Copy"), TEXT("Menu"), MB_OK);
             break;
 
         case ID_EDIT_PASTE:
-            MessageBox(hWnd, TEXT("貼り付け"), TEXT("メニュー"), MB_OK);
+            MessageBox(hWnd, TEXT("Paste"), TEXT("Menu"), MB_OK);
             break;
         }
         return 0;
@@ -168,9 +168,10 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         pResult = (InputResult *)((CREATESTRUCT *)lParam)->lpCreateParams;
 
         CreateWindow("STATIC", "Please input lattice rank and seed:", (WS_CHILD | WS_VISIBLE), 10, 10, 250, 20, hWnd, NULL, NULL, NULL);
-
-        hEditRank = CreateWindow("EDIT", "", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 10, 35, 100, 22, hWnd, (HMENU)IDC_EDIT, NULL, NULL);
-        hEditSeed = CreateWindow("EDIT", "", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 120, 35, 100, 22, hWnd, (HMENU)IDC_EDIT, NULL, NULL);
+        CreateWindow("STATIC", "Rank:", (WS_CHILD | WS_VISIBLE | SS_RIGHT), 10, 38, 40, 20, hWnd, NULL, NULL, NULL);
+        hEditRank = CreateWindow("EDIT", "", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 55, 35, 60, 22, hWnd, (HMENU)IDC_EDIT, NULL, NULL);
+        CreateWindow("STATIC", "Seed:", (WS_CHILD | WS_VISIBLE | SS_RIGHT), 120, 38, 40, 20, hWnd, NULL, NULL, NULL);
+        hEditSeed = CreateWindow("EDIT", "", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 165, 35, 60, 22, hWnd, (HMENU)IDC_EDIT, NULL, NULL);
         CreateWindow("BUTTON", "OK", (WS_CHILD | WS_VISIBLE), 60, 70, 70, 25, hWnd, (HMENU)IDC_OK, NULL, NULL);
         CreateWindow("BUTTON", "Cancel", (WS_CHILD | WS_VISIBLE), 150, 70, 70, 25, hWnd, (HMENU)IDC_CANCEL, NULL, NULL);
         break;
