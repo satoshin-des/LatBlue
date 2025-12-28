@@ -7,21 +7,26 @@
 
 #include "tools.h"
 
-NTL::mat_ZZ B;
-int n;
+Lattice lattice;
 
-void generator(const int seed)
+void initLattice()
+{
+    lattice.rank = 0L;
+}
+
+void generator(const int rank, const int seed)
 {
     const long bit = 10L;
 
     NTL::vec_ZZ v;
-    generate_random_HNF(v, n, bit, NTL::to_ZZ(seed));
-    B.SetDims(n, n);
-    NTL::clear(B);
-    B(1, 1) = v(1);
-    for (int i = 2; i <= n; i++)
+    generate_random_HNF(v, rank, bit, NTL::to_ZZ(seed));
+    lattice.basis.SetDims(rank, rank);
+    lattice.rank = rank;
+    NTL::clear(lattice.basis);
+    lattice.basis(1, 1) = v(1);
+    for (int i = 2; i <= lattice.rank; i++)
     {
-        B(i, 1) = v(i);
-        B(i, i) = 1;
+        lattice.basis(i, 1) = v(i);
+        lattice.basis(i, i) = 1;
     }
 }

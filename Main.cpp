@@ -1,5 +1,6 @@
 #include <windows.h>
-#include <vector>
+
+#include "core.h"
 
 #define ID_FILE_OPEN 1001
 #define ID_FILE_EXIT 1002
@@ -51,6 +52,8 @@ int WINAPI WinMain(
     HMENU hEditMenu;       // 編集
     MSG msg;               // メッセージ
 
+    initLattice();
+
     // Register window classes
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
@@ -66,15 +69,7 @@ int WINAPI WinMain(
     RegisterClass(&wcInput);
 
     // ウィンドウ作成
-    hWnd = CreateWindow(
-        wc.lpszClassName,
-        TEXT("cryppto"),
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        640, 480,
-        NULL, NULL,
-        hInstance,
-        NULL);
+    hWnd = CreateWindow(wc.lpszClassName, TEXT("cryppto"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
 
     // メニューバーの作成
     hMenuBar = CreateMenu();
@@ -185,6 +180,7 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             GetWindowText(hEditSeed, buf, 256);
             pResult->seed = atoi(buf);
             pResult->ok = true;
+            generator(pResult->rank, pResult->seed);
 
             DestroyWindow(hWnd);
             break;
