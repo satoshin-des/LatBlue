@@ -110,11 +110,17 @@ int WINAPI WinMain(
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    char buf[256];
     static InputResult res; // 入力結果
+    static HWND hResultText;
     static HWND hPopup;
 
     switch (msg)
     {
+    case WM_CREATE:
+        hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 100, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        break;
+
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
@@ -140,6 +146,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             MessageBox(hWnd, TEXT("Paste"), TEXT("Menu"), MB_OK);
             break;
         }
+        return 0;
+
+    case WM_APP + 1:
+        sprintf(
+            buf,
+            "Lattice generated!\r\nRank = %d\r\nSeed = %d",
+            res.rank,
+            res.seed);
+
+        SetWindowTextA(hResultText, buf);
         return 0;
 
     case WM_DESTROY:
@@ -181,7 +197,7 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             pResult->seed = atoi(buf);
             pResult->ok = true;
             generator(pResult->rank, pResult->seed);
-
+            PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
             DestroyWindow(hWnd);
             break;
 
