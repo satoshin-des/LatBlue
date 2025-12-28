@@ -1,6 +1,9 @@
 #include <windows.h>
 
+#include <NTL/RR.h>
+
 #include "core.h"
+#include "lattice.h"
 
 #define ID_FILE_OPEN 1001
 #define ID_FILE_EXIT 1002
@@ -16,6 +19,7 @@ struct InputResult
     bool ok = false;
     int rank = 0;
     int seed = 0;
+    double slope;
 };
 
 /**
@@ -38,12 +42,10 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
  */
 LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-int WINAPI WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine,
-    int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    NTL::RR::SetPrecision(120);
+
     WNDCLASS wc = {};      // Window class
     WNDCLASS wcInput = {}; // Window class for input
     HWND hWnd;             // ウィンドウ
@@ -52,7 +54,7 @@ int WINAPI WinMain(
     HMENU hEditMenu;       // 編集
     MSG msg;               // メッセージ
 
-    initLattice();
+    InitLattice();
 
     // Register window classes
     wc.lpfnWndProc = WndProc;
@@ -149,12 +151,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_APP + 1:
-        sprintf(
-            buf,
-            "Lattice generated!\r\nRank = %d\r\nSeed = %d",
-            res.rank,
-            res.seed);
-
+        sprintf(buf, "Lattice generated!\r\nslope = %lf\r\nSeed = %d", res.slope, res.seed);
         SetWindowTextA(hResultText, buf);
         return 0;
 
@@ -196,7 +193,9 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             GetWindowText(hEditSeed, buf, 256);
             pResult->seed = atoi(buf);
             pResult->ok = true;
-            generator(pResult->rank, pResult->seed);
+            Generator(pResult->rank, pResult->seed);
+            ComputeGSO();
+            pResult->slope = NTL::to_double(ComputeSlope());
             PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
             DestroyWindow(hWnd);
             break;

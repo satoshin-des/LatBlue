@@ -4,17 +4,17 @@
 #include <sstream>
 
 #include <NTL/ZZ.h>
+#include <NTL/vec_ZZ.h>
 
 #include "tools.h"
+#include "lattice.h"
 
-Lattice lattice;
-
-void initLattice()
+void InitLattice()
 {
     lattice.rank = 0L;
 }
 
-void generator(const int rank, const int seed)
+void Generator(const int rank, const int seed)
 {
     const long bit = 10L;
 
