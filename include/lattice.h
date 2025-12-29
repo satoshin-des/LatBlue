@@ -22,6 +22,13 @@ extern Lattice lattice;
 void ComputeGSO();
 
 /**
+ * @brief Computes volume of lattice
+ *
+ * @return NTL::ZZ
+ */
+NTL::ZZ Volume();
+
+/**
  * @brief Computes GSA-slope
  *
  * @return NTL::RR GSA-slope

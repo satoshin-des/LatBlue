@@ -1,5 +1,6 @@
 #include <windows.h>
 
+#include <NTL/ZZ.h>
 #include <NTL/RR.h>
 
 #include "core.h"
@@ -20,6 +21,7 @@ struct InputResult
     int rank = 0;
     int seed = 0;
     double slope;
+    NTL::ZZ vol;
 };
 
 /**
@@ -151,7 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_APP + 1:
-        sprintf(buf, "Lattice generated!\r\nslope = %lf\r\nSeed = %d", res.slope, res.seed);
+        sprintf(buf, "Lattice generated!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
 
@@ -196,6 +198,7 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             Generator(pResult->rank, pResult->seed);
             ComputeGSO();
             pResult->slope = NTL::to_double(ComputeSlope());
+            pResult->vol = Volume();
             PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
             DestroyWindow(hWnd);
             break;

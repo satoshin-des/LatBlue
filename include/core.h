@@ -2,12 +2,17 @@
 #define CORE_H
 
 #include <iostream>
+#include <string>
+
+#include <NTL/ZZ.h>
 
 /**
  * @brief Initializes lattice informations
  *
  */
 void InitLattice();
+
+std::string ZZToString(const NTL::ZZ &z);
 
 /**
  * @brief Generates Goldstein-Mayer lattice

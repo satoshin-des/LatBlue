@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include <iostream>
+#include <string>
 #include <sstream>
 
 #include <NTL/ZZ.h>
@@ -12,6 +13,13 @@
 void InitLattice()
 {
     lattice.rank = 0L;
+}
+
+std::string ZZToString(const NTL::ZZ &z)
+{
+    std::stringstream buffer;
+    buffer << z;
+    return buffer.str();
 }
 
 void Generator(const int rank, const int seed)

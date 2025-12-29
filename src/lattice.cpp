@@ -28,6 +28,11 @@ void ComputeGSO()
     }
 }
 
+NTL::ZZ Volume()
+{
+    return NTL::abs(NTL::determinant(lattice.basis));
+}
+
 NTL::RR ComputeSlope()
 {
     NTL::RR S = NTL::to_RR(0.0), T = NTL::to_RR(0.0);
