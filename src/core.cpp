@@ -10,6 +10,8 @@
 #include "tools.h"
 #include "lattice.h"
 
+REDUCE reduce = REDUCE::LLL;
+
 void InitLattice()
 {
     lattice.rank = 0L;

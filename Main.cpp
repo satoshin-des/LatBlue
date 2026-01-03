@@ -2,6 +2,7 @@
 
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
+#include <NTL/LLL.h>
 
 #include "core.h"
 #include "lattice.h"
@@ -11,9 +12,12 @@
 #define ID_SVP_GENERATE 1003
 #define ID_EDIT_COPY 2001
 #define ID_EDIT_PASTE 2002
+#define ID_EDIT_REDUCE 2003
 #define IDC_EDIT 3001
 #define IDC_OK 3002
 #define IDC_CANCEL 3003
+#define ID_REDUCE_LLL 4001
+#define ID_REDUCE_BKZ 4002
 
 struct InputResult
 {
@@ -44,17 +48,30 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
  */
 LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+/**
+ * @brief Widow procedure for lattice basis reduction
+ *
+ * @param hWnd
+ * @param msg
+ * @param wParam
+ * @param lParam
+ * @return LRESULT
+ */
+LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     NTL::RR::SetPrecision(120);
 
-    WNDCLASS wc = {};      // Window class
-    WNDCLASS wcInput = {}; // Window class for input
-    HWND hWnd;             // ウィンドウ
-    HMENU hMenuBar;        // メニューバー
-    HMENU hFileMenu;       // ファイル
-    HMENU hEditMenu;       // 編集
-    MSG msg;               // メッセージ
+    WNDCLASS wc = {};       // Window class
+    WNDCLASS wcInput = {};  // Window class for input
+    WNDCLASS wcReduce = {}; // Window class for lattice basis reduction
+    HWND hWnd;              // ウィンドウ
+    HMENU hMenuBar;         // メニューバー
+    HMENU hFileMenu;        // ファイル
+    HMENU hEditMenu;        // 編集
+    HMENU hReduceMenu;      // Reduce menu
+    MSG msg;                // メッセージ
 
     InitLattice();
 
@@ -72,6 +89,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcInput.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     RegisterClass(&wcInput);
 
+    wcReduce.lpfnWndProc = ReduceWndProc;
+    wcReduce.hInstance = hInstance;
+    wcReduce.lpszClassName = TEXT("ReducePopup");
+    wcReduce.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wcReduce.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    RegisterClass(&wcReduce);
+
     // ウィンドウ作成
     hWnd = CreateWindow(wc.lpszClassName, TEXT("cryppto"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
 
@@ -79,6 +103,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     hMenuBar = CreateMenu();
     hFileMenu = CreatePopupMenu();
     hEditMenu = CreatePopupMenu();
+    hReduceMenu = CreatePopupMenu();
 
     // ファイル
     AppendMenu(hFileMenu, MF_STRING, ID_FILE_OPEN, TEXT("Open"));
@@ -87,7 +112,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hFileMenu, MF_STRING, ID_FILE_EXIT, TEXT("Quit"));
 
+    // Reduce
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_LLL, TEXT("LLL"));
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
+
     // 編集
+    AppendMenu(hEditMenu, MF_POPUP, (UINT_PTR)hReduceMenu, TEXT("Reduce"));
+    AppendMenu(hEditMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hEditMenu, MF_STRING, ID_EDIT_COPY, TEXT("Copy"));
     AppendMenu(hEditMenu, MF_STRING, ID_EDIT_PASTE, TEXT("Paste"));
 
@@ -140,6 +171,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case ID_FILE_EXIT:
             DestroyWindow(hWnd);
+            break;
+
+        case ID_REDUCE_LLL:
+            reduce = REDUCE::LLL;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            MessageBox(hWnd, TEXT("LLL selected"), TEXT("Info"), MB_OK);
+            break;
+
+        case ID_REDUCE_BKZ:
+            reduce = REDUCE::BKZ;
+            MessageBox(hWnd, TEXT("BKZ selected"), TEXT("Info"), MB_OK);
             break;
 
         case ID_EDIT_COPY:
@@ -207,6 +251,41 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
         }
+        break;
+
+    case WM_CLOSE:
+        DestroyWindow(hWnd);
+        break;
+    }
+    return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    static InputResult *pResult; // input result
+
+    switch (msg)
+    {
+    case WM_CREATE:
+        pResult = (InputResult *)((CREATESTRUCT *)lParam)->lpCreateParams;
+        switch (reduce)
+        {
+        case REDUCE::LLL:
+            NTL::LLL_XD(lattice.basis);
+            break;
+
+        case REDUCE::BKZ:
+            break;
+        }
+        ComputeGSO();
+        pResult->slope = NTL::to_double(ComputeSlope());
+        PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
+        DestroyWindow(hWnd);
+        break;
+
+    case WM_COMMAND:
+        NTL::LLL_XD(lattice.basis);
+        DestroyWindow(hWnd);
         break;
 
     case WM_CLOSE:

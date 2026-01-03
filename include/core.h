@@ -7,11 +7,29 @@
 #include <NTL/ZZ.h>
 
 /**
+ * @brief enum for lattice reduction algorithm
+ *
+ */
+enum REDUCE
+{
+    LLL,
+    BKZ
+};
+
+extern REDUCE reduce; // Reduction algorithm
+
+/**
  * @brief Initializes lattice informations
  *
  */
 void InitLattice();
 
+/**
+ * @brief Converts NTL::ZZ to std::string
+ *
+ * @param z Integer to convert
+ * @return std::string Converted string
+ */
 std::string ZZToString(const NTL::ZZ &z);
 
 /**
