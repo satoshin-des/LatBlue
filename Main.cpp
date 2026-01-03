@@ -7,6 +7,7 @@
 #include "core.h"
 #include "lattice.h"
 
+#define TIMER_AUTO_CLOSE 1
 #define ID_FILE_OPEN 1001
 #define ID_FILE_EXIT 1002
 #define ID_SVP_GENERATE 1003
@@ -145,7 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    char buf[256];
+    char buf[1024];
     static InputResult res; // 入力結果
     static HWND hResultText;
     static HWND hPopup;
@@ -175,10 +176,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case ID_REDUCE_LLL:
             reduce = REDUCE::LLL;
+            // CreateWindowEx((WS_EX_TOPMOST | WS_EX_TOOLWINDOW), "NoticeWindow", "Notice", (WS_POPUP | WS_BORDER), 300, 200, 280, 60, hWnd, NULL, GetModuleHandle(NULL), (LPVOID) "LLL reduction finished!");
+            // MessageBoxW(hWnd, TEXT(L"Now Reducing...\n少女簡約中"), TEXT(L"Info"), NULL);
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
-            MessageBox(hWnd, TEXT("LLL selected"), TEXT("Info"), MB_OK);
             break;
 
         case ID_REDUCE_BKZ:
@@ -197,7 +199,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_APP + 1:
-        sprintf(buf, "Lattice generated!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
+        sprintf(buf, "Lattice basis generated!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
+        SetWindowTextA(hResultText, buf);
+        return 0;
+
+    case WM_APP + 2:
+        sprintf(buf, "Lattice basis reduced!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
 
@@ -268,6 +275,13 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
     {
     case WM_CREATE:
         pResult = (InputResult *)((CREATESTRUCT *)lParam)->lpCreateParams;
+        CreateWindowW(L"STATIC", L"Now Reducing...\n少女簡約中", (WS_CHILD | WS_VISIBLE), 10, 10, 250, 50, hWnd, NULL, NULL, NULL);
+        SetTimer(hWnd, 1, 10, NULL);
+        break;
+
+    case WM_TIMER:
+        KillTimer(hWnd, 1);
+
         switch (reduce)
         {
         case REDUCE::LLL:
@@ -276,15 +290,15 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
         case REDUCE::BKZ:
             break;
+
+        case REDUCE::NONE:
+            break;
         }
+
         ComputeGSO();
         pResult->slope = NTL::to_double(ComputeSlope());
-        PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
-        DestroyWindow(hWnd);
-        break;
 
-    case WM_COMMAND:
-        NTL::LLL_XD(lattice.basis);
+        PostMessage(GetParent(hWnd), WM_APP + 2, 0, 0);
         DestroyWindow(hWnd);
         break;
 

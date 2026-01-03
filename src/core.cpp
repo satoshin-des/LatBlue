@@ -10,7 +10,7 @@
 #include "tools.h"
 #include "lattice.h"
 
-REDUCE reduce = REDUCE::LLL;
+REDUCE reduce = REDUCE::NONE;
 
 void InitLattice()
 {

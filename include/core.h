@@ -12,6 +12,7 @@
  */
 enum REDUCE
 {
+    NONE,
     LLL,
     BKZ
 };
