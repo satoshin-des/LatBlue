@@ -303,29 +303,14 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
     case WM_CREATE:
         pResult = (InputResult *)((CREATESTRUCT *)lParam)->lpCreateParams;
 
-        CreateWindowW(
-            L"STATIC",
-            L"Now Reducing...\n少女簡約中",
-            WS_CHILD | WS_VISIBLE,
-            10, 10, 260, 40,
-            hWnd, NULL, NULL, NULL);
+        CreateWindowW(L"STATIC", L"Now Reducing...\n少女簡約中", (WS_CHILD | WS_VISIBLE), 10, 10, 260, 40, hWnd, NULL, NULL, NULL);
 
-        hProgress = CreateWindowEx(
-            0,
-            PROGRESS_CLASS,
-            NULL,
-            WS_CHILD | WS_VISIBLE,
-            20, 50, 240, 20,
-            hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hProgress = CreateWindowEx(0, PROGRESS_CLASS, NULL, (WS_CHILD | WS_VISIBLE), 20, 50, 240, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
 
         SendMessage(hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
         SendMessage(hProgress, PBM_SETPOS, 0, 0);
 
-        CreateThread(
-            NULL, 0,
-            ReduceWorkerThread,
-            hWnd,
-            0, NULL);
+        CreateThread(NULL, 0, ReduceWorkerThread, hWnd, 0, NULL);
         break;
 
     case WM_APP_PROGRESS:
@@ -352,8 +337,7 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
     switch (reduce)
     {
     case REDUCE::LLL:
-        LLLReduce(0.99, lattice.rank, 0);
-        NTL::LLL_XD(lattice.basis);
+        L2Reduce(hWnd, WM_APP_PROGRESS, 0.99);
         break;
 
     case REDUCE::DEEP_LLL:

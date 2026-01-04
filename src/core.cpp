@@ -24,6 +24,13 @@ std::string ZZToString(const NTL::ZZ &z)
     return buffer.str();
 }
 
+NTL::RR Dot(const NTL::vec_ZZ a, const NTL::vec_ZZ b)
+{
+    NTL::ZZ t;
+    NTL::InnerProduct(t, a, b);
+    return NTL::to_RR(t);
+}
+
 void Generator(const int rank, const int seed)
 {
     const long bit = 10L;

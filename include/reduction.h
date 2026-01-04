@@ -3,7 +3,19 @@
 
 #include <windows.h>
 
+#include <NTL/mat_RR.h>
+#include <NTL/vec_RR.h>
+
 void SizeReduce(const int i, const int j);
+
+void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s);
+
+/**
+ * @brief Applies LLL-reduction for lattice basis with L2 algorithm
+ *
+ * @param delta reduction parameter
+ */
+void L2Reduce(HWND hWnd, UINT Msg, const double delta);
 
 /**
  * @brief Applies LLL-reduction for lattice basis

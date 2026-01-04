@@ -5,6 +5,8 @@
 #include <string>
 
 #include <NTL/ZZ.h>
+#include <NTL/RR.h>
+#include <NTL/vec_ZZ.h>
 
 /**
  * @brief enum for lattice reduction algorithm
@@ -25,6 +27,8 @@ extern REDUCE reduce; // Reduction algorithm
  *
  */
 void InitLattice();
+
+NTL::RR Dot(const NTL::vec_ZZ a, const NTL::vec_ZZ b);
 
 /**
  * @brief Converts NTL::ZZ to std::string

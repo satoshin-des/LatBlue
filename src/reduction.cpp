@@ -3,6 +3,8 @@
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
 #include <NTL/vec_ZZ.h>
+#include <NTL/mat_RR.h>
+#include <NTL/vec_RR.h>
 #include <NTL/LLL.h>
 
 #include "core.h"
@@ -20,6 +22,105 @@ void SizeReduce(const int i, const int j)
         {
             lattice.mu[i][k] -= lattice.mu[j][k] * NTL::to_RR(q);
         }
+    }
+}
+
+void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s)
+{
+    const double eta_bar = (eta + eta + 1) * 0.25;
+    NTL::ZZ x;
+    NTL::RR max;
+    r[0][0] = Dot(lattice.basis[0], lattice.basis[0]);
+    lattice.mu[0][0] = 1.0;
+
+    for (long i, j, h;;)
+    {
+        for (j = 0; j <= k; ++j)
+        {
+            r[k][j] = Dot(lattice.basis[k], lattice.basis[j]);
+            for (h = 0; h < j; ++h)
+            {
+                r[k][j] -= r[k][h] * lattice.mu[j][h];
+            }
+            lattice.mu[k][j] = r[k][j] / r[j][j];
+        }
+
+        s[0] = Dot(lattice.basis[k], lattice.basis[k]);
+        for (j = 1; j <= k; ++j)
+        {
+            s[j] = s[j - 1] - lattice.mu[k][j - 1] * r[k][j - 1];
+        }
+        r[k][k] = s[k];
+
+        max = -1;
+        for (i = 0; i < k; ++i)
+        {
+            if ((lattice.mu[k][i] > max) || (lattice.mu[k][i] < -max))
+            {
+                max = NTL::abs(lattice.mu[k][i]);
+            }
+        }
+
+        if (max > eta_bar)
+        {
+            for (i = k - 1; i >= 0; --i)
+            {
+                x = NTL::RoundToZZ(lattice.mu[k][i]);
+                lattice.basis[k] -= x * lattice.basis[i];
+                for (j = 0; j <= i; ++j)
+                {
+                    lattice.mu[k][j] -= NTL::to_RR(x) * lattice.mu[i][j];
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void L2Reduce(HWND hWnd, UINT Msg, const double delta)
+{
+    const double delta_bar = (delta + 1) * 0.5;
+    double prog_ratio = 0.0;
+    NTL::mat_RR r;
+    NTL::vec_RR s;
+
+    // Reduces basis lightly
+    NTL::LLL_XD(lattice.basis);
+
+    NTL::clear(lattice.mu);
+    NTL::clear(lattice.B);
+    r.SetDims(lattice.rank, lattice.rank);
+    s.SetLength(lattice.rank + 1);
+    r[0][0] = Dot(lattice.basis[0], lattice.basis[0]);
+
+    for (long k = 1, k_, j; k < lattice.rank;)
+    {
+        if (k * 100.0 / (lattice.rank - 1.0) > prog_ratio)
+        {
+            prog_ratio = k * 100.0 / (lattice.rank - 1.0);
+        }
+        PostMessageA(hWnd, Msg, (int)std::round(prog_ratio), 0);
+
+        SizeReduceL2(0.51, k, r, s);
+
+        k_ = k;
+        while ((k >= 1) && (delta_bar * r[k - 1][k - 1] >= s[k - 1]))
+        {
+            NTL::swap(lattice.basis[k], lattice.basis[k - 1]);
+            --k;
+        }
+
+        for (j = 0; j < k; ++j)
+        {
+            lattice.mu[k][j] = lattice.mu[k_][j];
+            r[k][j] = r[k_][j];
+        }
+        r[k][k] = s[k];
+
+        ++k;
     }
 }
 
@@ -87,14 +188,12 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const
         }
         PostMessageA(hWnd, Msg, (int)std::round(prog_ratio), 0);
 
-        std::cout << k << std::endl;
         for (j = k - 1; j > -1; --j)
         {
             SizeReduce(k, j);
         }
 
-        NTL::InnerProduct(C, NTL::conv<NTL::vec_RR>(lattice.basis[k]), NTL::conv<NTL::vec_RR>(lattice.basis[k]));
-
+        C = Dot(lattice.basis[k], lattice.basis[k]);
         for (i = 0; i < k;)
         {
             if ((i > -1) && (C < delta * lattice.B[i]))
