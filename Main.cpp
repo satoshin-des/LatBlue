@@ -1,4 +1,6 @@
 #include <windows.h>
+#include <commctrl.h>
+#pragma comment(lib, "comctl32.lib")
 
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
@@ -6,6 +8,7 @@
 
 #include "core.h"
 #include "lattice.h"
+#include "reduction.h"
 
 #define TIMER_AUTO_CLOSE 1
 #define ID_FILE_OPEN 1001
@@ -19,6 +22,9 @@
 #define IDC_CANCEL 3003
 #define ID_REDUCE_LLL 4001
 #define ID_REDUCE_BKZ 4002
+#define ID_REDUCE_DEEP_LLL 4003
+#define WM_APP_PROGRESS (WM_APP + 10)
+#define WM_APP_FINISH (WM_APP + 11)
 
 struct InputResult
 {
@@ -51,6 +57,7 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 /**
  * @brief Widow procedure for lattice basis reduction
+ * The almost of this function is written with AI
  *
  * @param hWnd
  * @param msg
@@ -60,10 +67,17 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
  */
 LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+/**
+ * @brief Lattice basis reduction in other thread
+ * The almost of this function is written with AI
+ *
+ * @param param
+ * @return DWORD
+ */
+DWORD WINAPI ReduceWorkerThread(LPVOID param);
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    NTL::RR::SetPrecision(120);
-
     WNDCLASS wc = {};       // Window class
     WNDCLASS wcInput = {};  // Window class for input
     WNDCLASS wcReduce = {}; // Window class for lattice basis reduction
@@ -73,6 +87,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HMENU hEditMenu;        // 編集
     HMENU hReduceMenu;      // Reduce menu
     MSG msg;                // メッセージ
+    INITCOMMONCONTROLSEX icc{};
 
     InitLattice();
 
@@ -97,6 +112,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcReduce.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     RegisterClass(&wcReduce);
 
+    // Progress bar
+    icc.dwSize = sizeof(icc);
+    icc.dwICC = ICC_PROGRESS_CLASS;
+    InitCommonControlsEx(&icc);
+
     // ウィンドウ作成
     hWnd = CreateWindow(wc.lpszClassName, TEXT("cryppto"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
 
@@ -115,6 +135,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // Reduce
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_LLL, TEXT("LLL"));
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_LLL, TEXT("DeepLLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
 
     // 編集
@@ -176,8 +197,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case ID_REDUCE_LLL:
             reduce = REDUCE::LLL;
-            // CreateWindowEx((WS_EX_TOPMOST | WS_EX_TOOLWINDOW), "NoticeWindow", "Notice", (WS_POPUP | WS_BORDER), 300, 200, 280, 60, hWnd, NULL, GetModuleHandle(NULL), (LPVOID) "LLL reduction finished!");
-            // MessageBoxW(hWnd, TEXT(L"Now Reducing...\n少女簡約中"), TEXT(L"Info"), NULL);
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            break;
+
+        case ID_REDUCE_DEEP_LLL:
+            reduce = REDUCE::DEEP_LLL;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
@@ -269,35 +295,45 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    static InputResult *pResult; // input result
+    static InputResult *pResult;
+    static HWND hProgress;
 
     switch (msg)
     {
     case WM_CREATE:
         pResult = (InputResult *)((CREATESTRUCT *)lParam)->lpCreateParams;
-        CreateWindowW(L"STATIC", L"Now Reducing...\n少女簡約中", (WS_CHILD | WS_VISIBLE), 10, 10, 250, 50, hWnd, NULL, NULL, NULL);
-        SetTimer(hWnd, 1, 10, NULL);
+
+        CreateWindowW(
+            L"STATIC",
+            L"Now Reducing...\n少女簡約中",
+            WS_CHILD | WS_VISIBLE,
+            10, 10, 260, 40,
+            hWnd, NULL, NULL, NULL);
+
+        hProgress = CreateWindowEx(
+            0,
+            PROGRESS_CLASS,
+            NULL,
+            WS_CHILD | WS_VISIBLE,
+            20, 50, 240, 20,
+            hWnd, NULL, GetModuleHandle(NULL), NULL);
+
+        SendMessage(hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+        SendMessage(hProgress, PBM_SETPOS, 0, 0);
+
+        CreateThread(
+            NULL, 0,
+            ReduceWorkerThread,
+            hWnd,
+            0, NULL);
         break;
 
-    case WM_TIMER:
-        KillTimer(hWnd, 1);
+    case WM_APP_PROGRESS:
+        SendMessage(hProgress, PBM_SETPOS, wParam, 0);
+        break;
 
-        switch (reduce)
-        {
-        case REDUCE::LLL:
-            NTL::LLL_XD(lattice.basis);
-            break;
-
-        case REDUCE::BKZ:
-            break;
-
-        case REDUCE::NONE:
-            break;
-        }
-
-        ComputeGSO();
+    case WM_APP_FINISH:
         pResult->slope = NTL::to_double(ComputeSlope());
-
         PostMessage(GetParent(hWnd), WM_APP + 2, 0, 0);
         DestroyWindow(hWnd);
         break;
@@ -307,4 +343,26 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
         break;
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+DWORD WINAPI ReduceWorkerThread(LPVOID param)
+{
+    HWND hWnd = (HWND)param;
+
+    switch (reduce)
+    {
+    case REDUCE::LLL:
+        LLLReduce(0.99, lattice.rank, 0);
+        NTL::LLL_XD(lattice.basis);
+        break;
+
+    case REDUCE::DEEP_LLL:
+        DeepLLLReduce(hWnd, WM_APP_PROGRESS, 0.99, lattice.rank, 0);
+        break;
+    }
+
+    ComputeGSO();
+
+    PostMessage(hWnd, WM_APP_FINISH, 0, 0);
+    return 0;
 }

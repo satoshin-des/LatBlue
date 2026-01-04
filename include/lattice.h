@@ -22,6 +22,16 @@ extern Lattice lattice;
 void ComputeGSO();
 
 /**
+ * @brief Applies deep-insertion to lattice basis
+ *
+ * @param k index
+ * @param l index
+ */
+void DeepInsertion(const int k, const int l);
+
+void UpdateDeepInsertionGSO(const long i, const long k, const long end);
+
+/**
  * @brief Computes volume of lattice
  *
  * @return NTL::ZZ

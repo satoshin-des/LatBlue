@@ -14,6 +14,7 @@ enum REDUCE
 {
     NONE,
     LLL,
+    DEEP_LLL,
     BKZ
 };
 

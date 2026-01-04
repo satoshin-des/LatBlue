@@ -1,6 +1,6 @@
 CXX = x86_64-w64-mingw32-g++
 CXXFLAGS = -O3 -flto -fopenmp -march=native -funroll-loops -ffast-math -Wall -Iinclude
-LDFLAGS = -lntl -mwindows
+LDFLAGS = -lntl -lcomctl32 -mwindows
 
 MAIN = Main.cpp
 
