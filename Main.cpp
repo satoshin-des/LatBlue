@@ -184,7 +184,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN:
-            MessageBox(hWnd, TEXT("「開く」が選ばれました"), TEXT("Menu"), MB_OK);
+            MessageBox(hWnd, TEXT("This application is being developed"), TEXT("Menu"), MB_OK);
             break;
 
         case ID_SVP_GENERATE:
