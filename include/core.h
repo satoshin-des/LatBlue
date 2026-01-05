@@ -17,6 +17,7 @@ enum REDUCE
     NONE,
     LLL,
     DEEP_LLL,
+    POT_LLL,
     BKZ
 };
 

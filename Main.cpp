@@ -23,12 +23,12 @@
 #define ID_REDUCE_LLL 4001
 #define ID_REDUCE_BKZ 4002
 #define ID_REDUCE_DEEP_LLL 4003
+#define ID_REDUCE_POT_LLL 4004
 #define WM_APP_PROGRESS (WM_APP + 10)
 #define WM_APP_FINISH (WM_APP + 11)
 
 struct InputResult
 {
-    bool ok = false;
     int rank = 0;
     int seed = 0;
     double slope;
@@ -136,6 +136,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Reduce
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_LLL, TEXT("LLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_LLL, TEXT("DeepLLL"));
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_LLL, TEXT("PotLLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
 
     // 編集
@@ -209,6 +210,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hPopup);
             break;
 
+        case ID_REDUCE_POT_LLL:
+            reduce = REDUCE::POT_LLL;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            break;
+
         case ID_REDUCE_BKZ:
             reduce = REDUCE::BKZ;
             MessageBox(hWnd, TEXT("BKZ selected"), TEXT("Info"), MB_OK);
@@ -271,7 +279,6 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             pResult->rank = atoi(buf);
             GetWindowText(hEditSeed, buf, 256);
             pResult->seed = atoi(buf);
-            pResult->ok = true;
             Generator(pResult->rank, pResult->seed);
             ComputeGSO();
             pResult->slope = NTL::to_double(ComputeSlope());
@@ -342,6 +349,10 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     case REDUCE::DEEP_LLL:
         DeepLLLReduce(hWnd, WM_APP_PROGRESS, 0.99, lattice.rank, 0);
+        break;
+
+    case REDUCE::POT_LLL:
+        PotLLLReduce(hWnd, WM_APP_PROGRESS, 0.99, lattice.rank, 0);
         break;
     }
 

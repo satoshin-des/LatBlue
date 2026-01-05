@@ -26,6 +26,17 @@ void L2Reduce(HWND hWnd, UINT Msg, const double delta);
  */
 void LLLReduce(const double delta, const int end, const int h);
 
+/**
+ * @brief Applies DeepLLL-reduction for lattice basis
+ *
+ * @param hWnd
+ * @param Msg
+ * @param delta reduction parameter
+ * @param end
+ * @param h
+ */
 void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h);
+
+void PotLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h);
 
 #endif // !REDUCTION_H

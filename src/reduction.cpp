@@ -225,3 +225,55 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const
         ++k;
     }
 }
+
+void PotLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h)
+{
+    NTL::RR P, P_min, S;
+    double prog_ratio = 0.0;
+
+    NTL::LLL_XD(lattice.basis);
+    ComputeGSO();
+
+    for (int l = 0, j, i, k; l < lattice.rank;)
+    {
+        if (l * 100.0 / (end - 1.0) > prog_ratio)
+        {
+            prog_ratio = l * 100.0 / (end - 1.0);
+        }
+        PostMessageA(hWnd, Msg, (int)std::round(prog_ratio), 0);
+
+        for (j = l - 1; j > -1; --j)
+        {
+            SizeReduce(l, j);
+        }
+
+        P = P_min = 1.0;
+        k = 0;
+        for (j = l - 1; j >= 0; --j)
+        {
+            S = 0;
+            for (i = j; i < l; ++i)
+            {
+                S += lattice.mu[l][i] * lattice.mu[l][i] * lattice.B[i];
+            }
+            P *= (lattice.B[l] + S) / lattice.B[j];
+
+            if (P < P_min)
+            {
+                k = j;
+                P_min = P;
+            }
+        }
+
+        if (delta > P_min)
+        {
+            DeepInsertion(k, l);
+            UpdateDeepInsertionGSO(k, l, lattice.rank);
+            l = k;
+        }
+        else
+        {
+            ++l;
+        }
+    }
+}
