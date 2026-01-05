@@ -40,6 +40,14 @@ NTL::RR Dot(const NTL::vec_ZZ a, const NTL::vec_ZZ b);
 std::string ZZToString(const NTL::ZZ &z);
 
 /**
+ * @brief Converts NTL::RR to std::string
+ *
+ * @param r Floating number to convert
+ * @return std::string Converted string
+ */
+std::string RRToString(const NTL::RR &r);
+
+/**
  * @brief Generates Goldstein-Mayer lattice
  *
  * @param seed seed for random-generation

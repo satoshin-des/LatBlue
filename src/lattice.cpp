@@ -6,6 +6,8 @@
 #include <NTL/mat_RR.h>
 #include <NTL/LLL.h>
 
+#include "core.h"
+
 Lattice lattice;
 
 void ComputeGSO()
@@ -113,4 +115,10 @@ NTL::RR ComputeSlope()
         T += NTL::log(lattice.B(i));
     }
     return 12.0 * (S - 0.5 * (lattice.rank + 1) * T) / (lattice.rank * (lattice.rank * lattice.rank - 1));
+}
+
+NTL::RR ComputeRHF()
+{
+    const NTL::RR hf = NTL::sqrt(Dot(lattice.basis[0], lattice.basis[0])) / NTL::exp(NTL::log(NTL::to_RR(Volume())) / lattice.rank);
+    return NTL::exp(NTL::log(hf) / lattice.rank);
 }

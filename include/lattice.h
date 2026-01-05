@@ -45,4 +45,11 @@ NTL::ZZ Volume();
  */
 NTL::RR ComputeSlope();
 
+/**
+ * @brief Computes RHF
+ *
+ * @return NTL::RR RHF
+ */
+NTL::RR ComputeRHF();
+
 #endif // !LATTICE_H

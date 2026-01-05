@@ -24,6 +24,13 @@ std::string ZZToString(const NTL::ZZ &z)
     return buffer.str();
 }
 
+std::string RRToString(const NTL::RR &r)
+{
+    std::stringstream buffer;
+    buffer << r;
+    return buffer.str();
+}
+
 NTL::RR Dot(const NTL::vec_ZZ a, const NTL::vec_ZZ b)
 {
     NTL::ZZ t;

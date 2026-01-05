@@ -33,6 +33,7 @@ struct InputResult
     int seed = 0;
     double slope;
     NTL::ZZ vol;
+    NTL::RR rhf;
 };
 
 /**
@@ -176,7 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case WM_CREATE:
-        hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 100, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 150, hWnd, NULL, GetModuleHandle(NULL), NULL);
         break;
 
     case WM_COMMAND:
@@ -233,12 +234,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_APP + 1:
-        sprintf(buf, "Lattice basis generated!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
+        sprintf(buf, "Lattice basis generated!\r\nVolume = %s\r\nslope = %lf\r\nRHF = %s", ZZToString(res.vol).c_str(), res.slope, RRToString(res.rhf).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
 
     case WM_APP + 2:
-        sprintf(buf, "Lattice basis reduced!\r\nslope = %lf\r\nVolume = %s", res.slope, ZZToString(res.vol).c_str());
+        sprintf(buf, "Lattice basis reduced!\r\nVolume = %s\r\nslope = %lf\r\nRHF = %s", ZZToString(res.vol).c_str(), res.slope, RRToString(res.rhf).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
 
@@ -283,6 +284,7 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             ComputeGSO();
             pResult->slope = NTL::to_double(ComputeSlope());
             pResult->vol = Volume();
+            pResult->rhf = ComputeRHF();
             PostMessage(GetParent(hWnd), WM_APP + 1, 0, 0);
             DestroyWindow(hWnd);
             break;
@@ -326,6 +328,7 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
     case WM_APP_FINISH:
         pResult->slope = NTL::to_double(ComputeSlope());
+        pResult->rhf = ComputeRHF();
         PostMessage(GetParent(hWnd), WM_APP + 2, 0, 0);
         DestroyWindow(hWnd);
         break;
