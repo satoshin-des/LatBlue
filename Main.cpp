@@ -1,6 +1,9 @@
 #include <windows.h>
+#include <commdlg.h>
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
+
+#include <fstream>
 
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
@@ -76,6 +79,16 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
  * @return DWORD
  */
 DWORD WINAPI ReduceWorkerThread(LPVOID param);
+
+/**
+ * @brief
+ *
+ * @param hWnd
+ * @param outPath
+ * @return true
+ * @return false
+ */
+bool OpenFileDialog(HWND hWnd, std::string &outPath);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -184,8 +197,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         switch (LOWORD(wParam))
         {
         case ID_FILE_OPEN:
-            MessageBox(hWnd, TEXT("This application is being developed"), TEXT("Menu"), MB_OK);
+        {
+            std::string path;
+            if (OpenFileDialog(hWnd, path))
+            {
+                std::ifstream ifs(path);
+                if (!ifs)
+                {
+                    MessageBox(hWnd, "Failed to open file.", "Error", MB_OK | MB_ICONERROR);
+                    break;
+                }
+
+                ifs >> res.rank;
+                lattice.rank = res.rank;
+                lattice.basis.SetDims(lattice.rank, lattice.rank);
+                for (int i = 0; i < res.rank; ++i)
+                {
+                    for (int j = 0; j < res.rank; ++j)
+                    {
+                        ifs >> lattice.basis[i][j];
+                    }
+                }
+                ComputeGSO();
+                res.slope = NTL::to_double(ComputeSlope());
+                res.vol = Volume();
+                res.rhf = ComputeRHF();
+
+                PostMessage(hWnd, WM_APP + 1, 0, 0);
+            }
             break;
+        }
 
         case ID_SVP_GENERATE:
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("InputPopup"), TEXT("Generate"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
@@ -280,6 +321,15 @@ LRESULT CALLBACK InputWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             pResult->rank = atoi(buf);
             GetWindowText(hEditSeed, buf, 256);
             pResult->seed = atoi(buf);
+            if (pResult->rank <= 0)
+            {
+                MessageBox(hWnd, "Rank must be a positive integer.", "Invalid input", MB_OK | MB_ICONWARNING);
+
+                SetFocus(hEditRank);
+                SendMessage(hEditRank, EM_SETSEL, 0, -1);
+                break;
+            }
+
             Generator(pResult->rank, pResult->seed);
             ComputeGSO();
             pResult->slope = NTL::to_double(ComputeSlope());
@@ -363,4 +413,27 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     PostMessage(hWnd, WM_APP_FINISH, 0, 0);
     return 0;
+}
+
+bool OpenFileDialog(HWND hWnd, std::string &outPath)
+{
+    char fileName[MAX_PATH] = "";
+
+    OPENFILENAME ofn{};
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = hWnd;
+    ofn.lpstrFilter =
+        "Text Files (*.txt)\0*.txt\0"
+        "All Files (*.*)\0*.*\0";
+    ofn.lpstrFile = fileName;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    ofn.lpstrTitle = "Open File";
+
+    if (GetOpenFileName(&ofn))
+    {
+        outPath = fileName;
+        return true;
+    }
+    return false;
 }
