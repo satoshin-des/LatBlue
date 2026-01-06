@@ -233,7 +233,7 @@ void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
     NTL::RR P, P_min, S;
     double prog_ratio = 0.0;
 
-    NTL::LLL_XD(lattice.basis, 0.5);
+    NTL::LLL_XD(lattice.basis);
     ComputeGSO();
 
     for (int l = 0, j, i, k; l < lattice.rank;)
