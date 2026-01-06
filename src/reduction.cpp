@@ -10,6 +10,8 @@
 #include "core.h"
 #include "lattice.h"
 
+double delta = 0.99;
+
 void SizeReduce(const int i, const int j)
 {
     if ((lattice.mu[i][j] > 0.5) || (lattice.mu[i][j] < -0.5))
@@ -80,7 +82,7 @@ void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s)
     }
 }
 
-void L2Reduce(HWND hWnd, UINT Msg, const double delta)
+void L2Reduce(HWND hWnd, UINT Msg)
 {
     const double delta_bar = (delta + 1) * 0.5;
     double prog_ratio = 0.0;
@@ -124,7 +126,7 @@ void L2Reduce(HWND hWnd, UINT Msg, const double delta)
     }
 }
 
-void LLLReduce(const double delta, const int end, const int h)
+void LLLReduce(const int end, const int h)
 {
     NTL::RR nu, B, t;
     NTL::vec_ZZ tmp;
@@ -170,7 +172,7 @@ void LLLReduce(const double delta, const int end, const int h)
     }
 }
 
-void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h)
+void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
 {
     bool flag;
     const int gamma = (lattice.rank >> 1);
@@ -226,12 +228,12 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const
     }
 }
 
-void PotLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h)
+void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
 {
     NTL::RR P, P_min, S;
     double prog_ratio = 0.0;
 
-    NTL::LLL_XD(lattice.basis);
+    NTL::LLL_XD(lattice.basis, 0.5);
     ComputeGSO();
 
     for (int l = 0, j, i, k; l < lattice.rank;)

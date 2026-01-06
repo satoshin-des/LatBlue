@@ -6,6 +6,8 @@
 #include <NTL/mat_RR.h>
 #include <NTL/vec_RR.h>
 
+extern double delta; // reduction parameter
+
 void SizeReduce(const int i, const int j);
 
 void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s);
@@ -15,7 +17,7 @@ void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s)
  *
  * @param delta reduction parameter
  */
-void L2Reduce(HWND hWnd, UINT Msg, const double delta);
+void L2Reduce(HWND hWnd, UINT Msg);
 
 /**
  * @brief Applies LLL-reduction for lattice basis
@@ -24,7 +26,7 @@ void L2Reduce(HWND hWnd, UINT Msg, const double delta);
  * @param end
  * @param h
  */
-void LLLReduce(const double delta, const int end, const int h);
+void LLLReduce(const int end, const int h);
 
 /**
  * @brief Applies DeepLLL-reduction for lattice basis
@@ -35,8 +37,8 @@ void LLLReduce(const double delta, const int end, const int h);
  * @param end
  * @param h
  */
-void DeepLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h);
+void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
 
-void PotLLLReduce(HWND hWnd, UINT Msg, const double delta, const int end, const int h);
+void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
 
 #endif // !REDUCTION_H

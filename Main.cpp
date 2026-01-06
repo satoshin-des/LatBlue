@@ -4,6 +4,7 @@
 #pragma comment(lib, "comctl32.lib")
 
 #include <fstream>
+#include <algorithm>
 
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
@@ -183,19 +184,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     char buf[1024];
-    static InputResult res; // 入力結果
+    char buf_delta[64];     // Buffer for reduction parameter
+    static InputResult res; // result for input
     static HWND hResultText;
+    static HWND hEditDelta;
     static HWND hPopup;
 
     switch (msg)
     {
     case WM_CREATE:
+        // The window that displays now lattice basis information
         hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 150, hWnd, NULL, GetModuleHandle(NULL), NULL);
+
+        // The window that we can input reduction parameter
+        CreateWindowW(L"STATIC", L"δ:", (WS_CHILD | WS_VISIBLE), 410, 10, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hEditDelta = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         break;
 
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
+        // Load file
         case ID_FILE_OPEN:
         {
             std::string path;
@@ -228,6 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
 
+        // Generates SVP-challenge lattice basis
         case ID_SVP_GENERATE:
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("InputPopup"), TEXT("Generate"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
@@ -239,6 +249,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_REDUCE_LLL:
+            GetWindowText(hEditDelta, buf_delta, 64);
+            delta = std::clamp(atof(buf_delta), 0.25, 1.0);
             reduce = REDUCE::LLL;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
@@ -246,6 +258,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_REDUCE_DEEP_LLL:
+            GetWindowText(hEditDelta, buf_delta, 64);
+            delta = std::clamp(atof(buf_delta), 0.2501, 0.999);
             reduce = REDUCE::DEEP_LLL;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
@@ -253,6 +267,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_REDUCE_POT_LLL:
+            GetWindowText(hEditDelta, buf_delta, 64);
+            delta = std::clamp(atof(buf_delta), 0.25, 1.0);
             reduce = REDUCE::POT_LLL;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
@@ -364,7 +380,7 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
         CreateWindowW(L"STATIC", L"Now Reducing...\n少女簡約中", (WS_CHILD | WS_VISIBLE), 10, 10, 260, 40, hWnd, NULL, NULL, NULL);
 
-        hProgress = CreateWindowEx(0, PROGRESS_CLASS, NULL, (WS_CHILD | WS_VISIBLE), 20, 50, 240, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hProgress = CreateWindowEx(0, PROGRESS_CLASS, NULL, (WS_CHILD | WS_VISIBLE | PBS_SMOOTH), 20, 50, 240, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
 
         SendMessage(hProgress, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
         SendMessage(hProgress, PBM_SETPOS, 0, 0);
@@ -397,15 +413,15 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
     switch (reduce)
     {
     case REDUCE::LLL:
-        L2Reduce(hWnd, WM_APP_PROGRESS, 0.99);
+        L2Reduce(hWnd, WM_APP_PROGRESS);
         break;
 
     case REDUCE::DEEP_LLL:
-        DeepLLLReduce(hWnd, WM_APP_PROGRESS, 0.99, lattice.rank, 0);
+        DeepLLLReduce(hWnd, WM_APP_PROGRESS, lattice.rank, 0);
         break;
 
     case REDUCE::POT_LLL:
-        PotLLLReduce(hWnd, WM_APP_PROGRESS, 0.99, lattice.rank, 0);
+        PotLLLReduce(hWnd, WM_APP_PROGRESS, lattice.rank, 0);
         break;
     }
 
