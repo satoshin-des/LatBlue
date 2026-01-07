@@ -183,11 +183,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    char buf[1024];
+    char buf[1024];         // Buffar to print result of lattice
     char buf_delta[64];     // Buffer for reduction parameter
+    char buf_gamma[64];     // Buffer for reduction parameter for deep-insertion
     static InputResult res; // result for input
     static HWND hResultText;
     static HWND hEditDelta;
+    static HWND hEditGamma;
     static HWND hPopup;
 
     switch (msg)
@@ -198,7 +200,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         // The window that we can input reduction parameter
         CreateWindowW(L"STATIC", L"δ:", (WS_CHILD | WS_VISIBLE), 410, 10, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
-        hEditDelta = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
+        hEditDelta = CreateWindowW(L"EDIT", L"0.99", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
+        CreateWindowW(L"STATIC", L"γ:", (WS_CHILD | WS_VISIBLE), 410, 40, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hEditGamma = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 40, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         break;
 
     case WM_COMMAND:
@@ -260,6 +264,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case ID_REDUCE_DEEP_LLL:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.2501, 0.999);
+            GetWindowText(hEditGamma, buf_gamma, 64);
+            if (atoi(buf_gamma) <= 0)
+            {
+                gamma = lattice.rank;
+            }
+            gamma = std::clamp(atoi(buf_gamma), 1, (int)lattice.rank);
             reduce = REDUCE::DEEP_LLL;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);

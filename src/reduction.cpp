@@ -11,6 +11,7 @@
 #include "lattice.h"
 
 double delta = 0.99;
+int gamma;
 
 void SizeReduce(const int i, const int j)
 {
@@ -109,7 +110,7 @@ void L2Reduce(HWND hWnd, UINT Msg)
         SizeReduceL2(0.51, k, r, s);
 
         k_ = k;
-        while ((k >= 1) && (delta_bar * r[k - 1][k - 1] >= s[k - 1]))
+        while ((k > 0) && (delta_bar * r[k - 1][k - 1] >= s[k - 1]))
         {
             NTL::swap(lattice.basis[k], lattice.basis[k - 1]);
             --k;
@@ -175,7 +176,6 @@ void LLLReduce(const int end, const int h)
 void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
 {
     bool flag;
-    const int gamma = (lattice.rank >> 1);
     double prog_ratio = 0.0;
     NTL::RR C;
 
