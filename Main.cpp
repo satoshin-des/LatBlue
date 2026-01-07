@@ -133,7 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     InitCommonControlsEx(&icc);
 
     // ウィンドウ作成
-    hWnd = CreateWindow(wc.lpszClassName, TEXT("cryppto"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
+    hWnd = CreateWindow(wc.lpszClassName, TEXT("LatBlue"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
 
     // メニューバーの作成
     hMenuBar = CreateMenu();
