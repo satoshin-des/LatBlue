@@ -8,6 +8,7 @@
 #include <NTL/RR.h>
 #include <NTL/vec_ZZ.h>
 
+#define LOG099 -0.010050335853501441183548857558547706085515007674629873378 // log(0.99)
 #define MIN(a, b) a < b ? a : b
 #define MAX(a, b) a > b ? a : b
 
@@ -21,7 +22,8 @@ enum REDUCE
     LLL,
     DEEP_LLL,
     POT_LLL,
-    BLOCK_KZ
+    BLOCK_KZ,
+    POT_BKZ
 };
 
 extern REDUCE reduce; // Reduction algorithm

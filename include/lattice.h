@@ -52,6 +52,8 @@ NTL::RR ComputeSlope();
  */
 NTL::RR ComputeRHF();
 
+NTL::RR LogPot();
+
 /**
  * @brief 
  * 
@@ -62,5 +64,7 @@ NTL::RR ComputeRHF();
  * @return false 
  */
 bool ENUM(const int start, const int end, NTL::vec_ZZ &v);
+
+bool PotENUM(const int start, const int end, NTL::vec_ZZ &v);
 
 #endif // !LATTICE_H

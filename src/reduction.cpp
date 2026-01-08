@@ -282,7 +282,51 @@ void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
     }
 }
 
-void BKZ(HWND hWnd, UINT Msg)
+void PotLLLReduce()
+{
+    ComputeGSO();
+
+    NTL::RR P, P_min, S;
+
+    for (int l = 0, j, i, k; l < lattice.rank;)
+    {
+        for (j = l - 1; j > -1; --j)
+        {
+            SizeReduce(l, j);
+        }
+
+        P = P_min = 1.0;
+        k = 0;
+        for (j = l - 1; j >= 0; --j)
+        {
+            S = 0;
+            for (i = j; i < l; ++i)
+            {
+                S += lattice.mu[l][i] * lattice.mu[l][i] * lattice.B[i];
+            }
+            P *= (lattice.B[l] + S) / lattice.B[j];
+
+            if (P < P_min)
+            {
+                k = j;
+                P_min = P;
+            }
+        }
+
+        if (delta > P_min)
+        {
+            DeepInsertion(k, l);
+            UpdateDeepInsertionGSO(k, l, lattice.rank);
+            l = k;
+        }
+        else
+        {
+            ++l;
+        }
+    }
+}
+
+void BKZReduce(HWND hWnd, UINT Msg)
 {
     double prog_ratio_1 = 0.0;
     double prog_ratio_2 = 0.0;
@@ -320,8 +364,8 @@ void BKZ(HWND hWnd, UINT Msg)
             ++loops;
         }
         ++k;
-        l = std::min(k + beta - 1, (int)lattice.rank);
-        h = std::min(l + 1, (int)lattice.rank);
+        l = MIN(k + beta - 1, lattice.rank);
+        h = MIN(l + 1, lattice.rank);
         if (ENUM(k - 1, l, w))
         {
             z = 0;
@@ -331,7 +375,7 @@ void BKZ(HWND hWnd, UINT Msg)
             {
                 for (j = 0; j < w.length(); ++j)
                 {
-                    v[i] += w[j] * lattice.basis[j][i];
+                    v[i] += w[j] * lattice.basis[j + k - 1][i];
                 }
             }
 
@@ -361,9 +405,77 @@ void BKZ(HWND hWnd, UINT Msg)
         {
             ++z;
             NTL::LLL_FP(lattice.basis);
-            //            LLLReduce(k, 0);
         }
 
         ComputeGSO();
+    }
+}
+
+void PotBKZReduce(HWND hWnd, UINT Msg)
+{
+    const int n1 = lattice.rank - 1;
+    double prog_ratio = 0;
+    NTL::vec_ZZ v, w;
+    NTL::mat_ZZ tmp_mat;
+
+    NTL::LLL_XD(lattice.basis);
+    PotLLLReduce();
+
+    for (int z = 0, j = 0, i, k, l, d; z < lattice.rank - 1;)
+    {
+        if (z * 100.0 / (lattice.rank - 1.0) > prog_ratio)
+        {
+            prog_ratio = z * 100.0 / (lattice.rank - 1.0);
+        }
+        PostMessageA(hWnd, Msg, prog_ratio, 0);
+
+        if (j == lattice.rank - 1)
+        {
+            j = 0;
+        }
+        ++j;
+        k = MIN(j + beta - 1, (int)lattice.rank - 1);
+        d = k - j + 1;
+        /* enumerate a shortest vector*/
+        if (PotENUM(j, d, v))
+        {
+            z = 0;
+
+            w.SetLength(lattice.rank);
+            NTL::clear(w);
+            for (i = 0; i < lattice.rank; ++i)
+            {
+                for (l = 0; l < d; ++l)
+                {
+                    w[i] += v[l] * lattice.basis[l + j][i];
+                }
+            }
+            tmp_mat.SetDims(lattice.rank + 1, lattice.rank);
+            for (l = 0; l < lattice.rank; ++l)
+            {
+                for (i = 0; i < j; ++i)
+                {
+                    tmp_mat[i][l] = lattice.basis[i][l];
+                }
+                tmp_mat[j][l] = w[l];
+                for (i = j + 1; i < lattice.rank + 1; ++i)
+                {
+                    tmp_mat[i][l] = lattice.basis[i - 1][l];
+                }
+            }
+            NTL::LLL_FP(tmp_mat);
+            for (i = 0; i < lattice.rank; ++i)
+            {
+                for (l = 0; l < lattice.rank; ++l)
+                {
+                    lattice.basis[i][l] = tmp_mat[i + 1][l];
+                }
+            }
+            PotLLLReduce();
+        }
+        else
+        {
+            ++z;
+        }
     }
 }

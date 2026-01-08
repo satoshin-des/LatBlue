@@ -17,6 +17,8 @@ void ComputeGSO()
     lattice.mu.SetDims(lattice.rank, lattice.rank);
     lattice.B.SetLength(lattice.rank);
     NTL::clear(gsoB);
+    NTL::clear(lattice.mu);
+    NTL::clear(lattice.B);
 
     for (int i = 1, j; i <= lattice.rank; ++i)
     {
@@ -48,7 +50,10 @@ void UpdateDeepInsertionGSO(const long i, const long k, const long end)
     int j, l;
     const int n = end;
     NTL::RR t, eps;
-    std::vector<NTL::RR> P(n), D(n), S(n);
+    NTL::vec_RR P, D, S;
+    P.SetLength(n);
+    D.SetLength(n);
+    S.SetLength(n);
 
     P[k] = D[k] = lattice.B[k];
     for (j = k - 1; j >= i; --j)
@@ -60,7 +65,7 @@ void UpdateDeepInsertionGSO(const long i, const long k, const long end)
     for (j = k; j > i; --j)
     {
         t = lattice.mu[k][j - 1] / D[j];
-        for (l = end - 1; l > k; --l)
+        for (l = n - 1; l > k; --l)
         {
             S[l] += lattice.mu[l][j] * P[j];
             lattice.mu[l][j] = lattice.mu[l][j - 1] - t * S[l];
@@ -74,11 +79,11 @@ void UpdateDeepInsertionGSO(const long i, const long k, const long end)
 
     t = 1.0 / D[i];
 
-    for (l = end - 1; l > k; --l)
+    for (l = n - 1; l > k; --l)
     {
         lattice.mu[l][i] = t * (S[l] + lattice.mu[l][i] * P[i]);
     }
-    for (l = k; l >= i + 2; --l)
+    for (l = k; l > i + 1; --l)
     {
         lattice.mu[l][i] = t * (S[l] + lattice.mu[l - 1][i] * P[i]);
     }
@@ -121,6 +126,17 @@ NTL::RR ComputeRHF()
 {
     const NTL::RR hf = NTL::sqrt(Dot(lattice.basis[0], lattice.basis[0])) / NTL::exp(NTL::log(NTL::to_RR(Volume())) / lattice.rank);
     return NTL::exp(NTL::log(hf) / lattice.rank);
+}
+
+NTL::RR LogPot()
+{
+    NTL::RR logp;
+    logp = 0;
+    for (int i = 0; i < lattice.rank; ++i)
+    {
+        logp += (lattice.rank - i) * NTL::log(lattice.B[i]);
+    }
+    return logp;
 }
 
 bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
@@ -212,6 +228,107 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
                 {
                     NTL::to_RR(tmp_vec[k]) > center[k] ? tmp_vec[k] -= width[k] : tmp_vec[k] += width[k];
                     ++width[k];
+                }
+            }
+        }
+    }
+}
+
+bool PotENUM(const int start, const int d, NTL::vec_ZZ &v)
+{
+    long i, r[d + 1];
+    NTL::RR R = NTL::log(lattice.B[start]), P = NTL::to_RR(0), temp;
+    NTL::vec_ZZ w;
+    NTL::vec_RR c, D;
+    NTL::mat_RR sigma;
+
+    w.SetLength(d);
+    c.SetLength(d);
+    D.SetLength(d + 1);
+    sigma.SetDims(d + 1, d);
+    v.SetLength(d);
+    NTL::clear(v);
+    v[0] = 1;
+
+    for (i = 0; i <= d; ++i)
+    {
+        r[i] = i;
+    }
+    for (int k = 0, last_nonzero = 0;;)
+    {
+        temp = NTL::to_RR(v[k]) - c[k];
+        temp *= temp;
+        D[k] = D[k + 1] + temp * lattice.B[k + start];
+        if ((k + 1) * NTL::log(D[k]) + P < (k + 1) * LOG099 + R)
+        {
+            if (k == 0)
+            {
+                return true;
+            }
+            else
+            {
+                P += NTL::log(D[k]);
+                --k;
+                if (r[k] < r[k + 1])
+                {
+                    r[k] = r[k + 1];
+                }
+                for (i = r[k]; i > k; --i)
+                {
+                    sigma[i][k] = sigma[i + 1][k] + lattice.mu[i + start][k + start] * NTL::to_RR(v[i]);
+                }
+                c[k] = -sigma[k + 1][k];
+                v[k] = NTL::RoundToZZ(c[k]);
+                w[k] = 1;
+            }
+        }
+        else
+        {
+            ++k;
+            if (k == d)
+            {
+                return false;
+            }
+            else
+            {
+                r[k - 1] = k;
+                if (k >= last_nonzero)
+                {
+                    last_nonzero = k;
+                    ++v[k];
+                    if (v[last_nonzero] >= 2)
+                    {
+                        ++k;
+                        if (k == d)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            r[k - 1] = k;
+                            last_nonzero = k;
+                            v[last_nonzero] = 1;
+                        }
+                    }
+                    P = 0;
+                    R = 0;
+                    for (i = 0; i <= last_nonzero; ++i)
+                    {
+                        R += NTL::log(lattice.B[i + start]);
+                    }
+                }
+                else
+                {
+                    if (NTL::to_RR(v[k]) > c[k])
+                    {
+                        v[k] -= w[k];
+                    }
+                    else
+                    {
+                        v[k] += w[k];
+                    }
+                    ++w[k];
+                    P -= NTL::log(D[k]);
                 }
             }
         }
