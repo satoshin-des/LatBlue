@@ -122,3 +122,98 @@ NTL::RR ComputeRHF()
     const NTL::RR hf = NTL::sqrt(Dot(lattice.basis[0], lattice.basis[0])) / NTL::exp(NTL::log(NTL::to_RR(Volume())) / lattice.rank);
     return NTL::exp(NTL::log(hf) / lattice.rank);
 }
+
+bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
+{
+    bool has_solution = false; // if found a shortest vector or not
+    const int d = end - start; // dimension of local projected block lattice
+
+    int i, r[d + 1];
+    NTL::RR tmp_val;     // temporary of NTL::RR
+    NTL::vec_RR radius;  // radius for searching
+    NTL::vec_ZZ tmp_vec; // temporary of NTL::vec_ZZ
+    NTL::vec_ZZ width;   // width for zigzag-searching
+    NTL::vec_RR eps;     // width for radius for searching
+    NTL::vec_RR center;  // center of zigzag-searching
+    NTL::vec_RR rho;     // squared norm of projected lattice vector
+    NTL::mat_RR sigma;
+
+    radius.SetLength(d);
+    width.SetLength(d);
+    center.SetLength(d);
+    rho.SetLength(d + 1);
+    sigma.SetDims(d + 1, d);
+    v.SetLength(d);
+    eps.SetLength(d);
+    tmp_vec.SetLength(d);
+    tmp_vec[0] = 1;
+    for (i = 0; i < d; ++i)
+    {
+        r[i] = i;
+        eps[i] = 0.99;
+    }
+
+    for (i = 0; i < d; ++i)
+    {
+        radius[i] = eps[d - i - 1] * lattice.B[start];
+    }
+
+    for (int k = 0, last_nonzero = 0;;)
+    {
+        tmp_val = NTL::to_RR(tmp_vec[k]) - center[k];
+        tmp_val *= tmp_val;
+        rho[k] = rho[k + 1] + tmp_val * lattice.B[k + start];
+        if (rho[k] <= radius[d - k - 1])
+        {
+            if (k == 0)
+            {
+                has_solution = true;
+                for (i = 0; i < d; ++i)
+                {
+                    v[i] = tmp_vec[i];
+                }
+                for (i = 0; i < d; ++i)
+                {
+                    radius[i] = 0.99 * MIN(0.99 * rho[0], radius[i]);
+                }
+            }
+            else
+            {
+                --k;
+                if (r[k + 1] > r[k])
+                {
+                    r[k] = r[k + 1];
+                }
+                for (i = r[k]; i > k; --i)
+                {
+                    sigma[i][k] = sigma[i + 1][k] + lattice.mu[i + start][k + start] * NTL::to_RR(tmp_vec[i]);
+                }
+                center[k] = -sigma[k + 1][k];
+                tmp_vec[k] = NTL::RoundToZZ(center[k]);
+                width[k] = 1;
+            }
+        }
+        else
+        {
+            ++k;
+            if (k == d)
+            {
+                return has_solution;
+            }
+            else
+            {
+                r[k] = k;
+                if (k >= last_nonzero)
+                {
+                    last_nonzero = k;
+                    ++tmp_vec[k];
+                }
+                else
+                {
+                    NTL::to_RR(tmp_vec[k]) > center[k] ? tmp_vec[k] -= width[k] : tmp_vec[k] += width[k];
+                    ++width[k];
+                }
+            }
+        }
+    }
+}

@@ -186,10 +186,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     char buf[1024];         // Buffar to print result of lattice
     char buf_delta[64];     // Buffer for reduction parameter
     char buf_gamma[64];     // Buffer for reduction parameter for deep-insertion
+    char buf_beta[64];      // Buffar for block size
     static InputResult res; // result for input
     static HWND hResultText;
     static HWND hEditDelta;
     static HWND hEditGamma;
+    static HWND hEditBeta;
     static HWND hPopup;
 
     switch (msg)
@@ -203,6 +205,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         hEditDelta = CreateWindowW(L"EDIT", L"0.99", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         CreateWindowW(L"STATIC", L"γ:", (WS_CHILD | WS_VISIBLE), 410, 40, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditGamma = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 40, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
+        CreateWindowW(L"STATIC", L"β:", (WS_CHILD | WS_VISIBLE), 410, 70, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hEditBeta = CreateWindowW(L"EDIT", L"40", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 70, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         break;
 
     case WM_COMMAND:
@@ -286,8 +290,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_REDUCE_BKZ:
-            reduce = REDUCE::BKZ;
-            MessageBox(hWnd, TEXT("BKZ selected"), TEXT("Info"), MB_OK);
+            GetWindowText(hEditDelta, buf_delta, 64);
+            delta = std::clamp(atof(buf_delta), 0.25, 1.0);
+            GetWindowText(hEditBeta, buf_beta, 64);
+            beta = std::clamp(atoi(buf_beta), 2, (int)lattice.rank);
+            reduce = REDUCE::BLOCK_KZ;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
             break;
 
         case ID_EDIT_COPY:
@@ -432,6 +442,10 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     case REDUCE::POT_LLL:
         PotLLLReduce(hWnd, WM_APP_PROGRESS, lattice.rank, 0);
+        break;
+
+    case REDUCE::BLOCK_KZ:
+        BKZ(hWnd, WM_APP_PROGRESS);
         break;
     }
 

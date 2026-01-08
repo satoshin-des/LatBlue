@@ -8,6 +8,9 @@
 #include <NTL/RR.h>
 #include <NTL/vec_ZZ.h>
 
+#define MIN(a, b) a < b ? a : b
+#define MAX(a, b) a > b ? a : b
+
 /**
  * @brief enum for lattice reduction algorithm
  *
@@ -18,7 +21,7 @@ enum REDUCE
     LLL,
     DEEP_LLL,
     POT_LLL,
-    BKZ
+    BLOCK_KZ
 };
 
 extern REDUCE reduce; // Reduction algorithm

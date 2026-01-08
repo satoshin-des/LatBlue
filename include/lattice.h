@@ -52,4 +52,15 @@ NTL::RR ComputeSlope();
  */
 NTL::RR ComputeRHF();
 
+/**
+ * @brief 
+ * 
+ * @param start 
+ * @param end 
+ * @param v 
+ * @return true 
+ * @return false 
+ */
+bool ENUM(const int start, const int end, NTL::vec_ZZ &v);
+
 #endif // !LATTICE_H

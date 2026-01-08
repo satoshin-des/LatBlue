@@ -12,6 +12,8 @@
 
 double delta = 0.99;
 int gamma;
+int beta;
+int max_loop = 5;
 
 void SizeReduce(const int i, const int j)
 {
@@ -277,5 +279,88 @@ void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
         {
             ++l;
         }
+    }
+}
+
+void BKZ(HWND hWnd, UINT Msg)
+{
+    double prog_ratio_1 = 0.0;
+    double prog_ratio_2 = 0.0;
+    NTL::vec_ZZ v;
+    NTL::vec_ZZ w;
+    NTL::mat_ZZ tmp_mat;
+
+    NTL::LLL_XD(lattice.basis);
+    NTL::BKZ_FP(lattice.basis, 0.99, MAX(10, beta / 2));
+    ComputeGSO();
+
+    for (int z = 0, k = 0, loops = 0, l, h, i, j; z < lattice.rank - 2;)
+    {
+        if (z * 100.0 / (lattice.rank - 2.0) > prog_ratio_1)
+        {
+            prog_ratio_1 = z * 100.0 / (lattice.rank - 2.0);
+        }
+        if (100.0 * loops / max_loop > prog_ratio_2)
+        {
+            prog_ratio_2 = 100.0 * loops / max_loop;
+        }
+        PostMessageA(hWnd, Msg, MAX(prog_ratio_1, prog_ratio_2), 0);
+
+        if (loops >= max_loop)
+        {
+            break;
+        }
+
+        if (k == lattice.rank - 1)
+        {
+            k = 0;
+            ++loops;
+        }
+        ++k;
+        l = std::min(k + beta - 1, (int)lattice.rank);
+        h = std::min(l + 1, (int)lattice.rank);
+        if (ENUM(k - 1, l, w))
+        {
+            z = 0;
+
+            v.SetLength(lattice.rank);
+            for (i = 0; i < lattice.rank; ++i)
+            {
+                for (j = 0; j < w.length(); ++j)
+                {
+                    v[i] += w[j] * lattice.basis[j][i];
+                }
+            }
+
+            tmp_mat.SetDims(h + 1, lattice.rank);
+            for (j = 0; j < lattice.rank; ++j)
+            {
+                for (i = 0; i < k - 1; ++i)
+                {
+                    tmp_mat[i][j] = lattice.basis[i][j];
+                }
+                tmp_mat[k - 1][j] = v[j];
+                for (i = k; i <= h; ++i)
+                {
+                    tmp_mat[i][j] = lattice.basis[i - 1][j];
+                }
+            }
+            NTL::LLL_FP(tmp_mat);
+            for (i = 1; i <= h; ++i)
+            {
+                for (j = 0; j < lattice.rank; ++j)
+                {
+                    lattice.basis[i - 1][j] = tmp_mat[i][j];
+                }
+            }
+        }
+        else
+        {
+            ++z;
+            NTL::LLL_FP(lattice.basis);
+            //            LLLReduce(k, 0);
+        }
+
+        ComputeGSO();
     }
 }

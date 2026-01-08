@@ -8,6 +8,8 @@
 
 extern double delta; // reduction parameter
 extern int gamma;    // reduction parameter for deep-insertion
+extern int beta;     // block-size
+extern int max_loop; // max tour loops for BKZ
 
 void SizeReduce(const int i, const int j);
 
@@ -46,5 +48,13 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
  * @param h
  */
 void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
+
+/**Applies BKZ-reduction for lattice basis
+ * @brief
+ *
+ * @param hWnd
+ * @param Msg
+ */
+void BKZ(HWND hWnd, UINT Msg);
 
 #endif // !REDUCTION_H
