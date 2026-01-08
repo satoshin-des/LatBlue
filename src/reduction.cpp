@@ -291,7 +291,10 @@ void BKZ(HWND hWnd, UINT Msg)
     NTL::mat_ZZ tmp_mat;
 
     NTL::LLL_XD(lattice.basis);
-    NTL::BKZ_FP(lattice.basis, 0.99, MAX(10, beta / 2));
+    for (int i = 2; i <= beta; i += 2)
+    {
+        NTL::BKZ_FP(lattice.basis, 0.99, i, 1);
+    }
     ComputeGSO();
 
     for (int z = 0, k = 0, loops = 0, l, h, i, j; z < lattice.rank - 2;)
