@@ -14,6 +14,11 @@
 #include "lattice.h"
 #include "reduction.h"
 
+#define TOP_PANEL_HEIGHT 180
+#define TOP_HEIGHT 160
+#define RIGHT_WIDTH 140
+#define MARGIN 10
+
 #define TIMER_AUTO_CLOSE 1
 #define ID_FILE_OPEN 1001
 #define ID_FILE_EXIT 1002
@@ -83,6 +88,18 @@ LRESULT CALLBACK ReduceWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 DWORD WINAPI ReduceWorkerThread(LPVOID param);
 
 /**
+ * @brief scroll view procedure that lattice basis matrix is printed
+ * The almost of this function is written with AI
+ *
+ * @param hWnd
+ * @param msg
+ * @param wParam
+ * @param lParam
+ * @return LRESULT
+ */
+LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+/**
  * @brief
  *
  * @param hWnd
@@ -94,15 +111,16 @@ bool OpenFileDialog(HWND hWnd, std::string &outPath);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    WNDCLASS wc = {};       // Window class
-    WNDCLASS wcInput = {};  // Window class for input
-    WNDCLASS wcReduce = {}; // Window class for lattice basis reduction
-    HWND hWnd;              // ウィンドウ
-    HMENU hMenuBar;         // メニューバー
-    HMENU hFileMenu;        // ファイル
-    HMENU hEditMenu;        // 編集
-    HMENU hReduceMenu;      // Reduce menu
-    MSG msg;                // メッセージ
+    WNDCLASS wc = {};        // Window class
+    WNDCLASS wcInput = {};   // Window class for input
+    WNDCLASS wcReduce = {};  // Window class for lattice basis reduction
+    WNDCLASS wcScrView = {}; // Window class for printing lattice basis
+    HWND hWnd;               // ウィンドウ
+    HMENU hMenuBar;          // メニューバー
+    HMENU hFileMenu;         // ファイル
+    HMENU hEditMenu;         // 編集
+    HMENU hReduceMenu;       // Reduce menu
+    MSG msg;                 // メッセージ
     INITCOMMONCONTROLSEX icc{};
 
     InitLattice();
@@ -128,13 +146,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wcReduce.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     RegisterClass(&wcReduce);
 
+    wcScrView.lpfnWndProc = ScrollViewProc;
+    wcScrView.hInstance = hInstance;
+    wcScrView.lpszClassName = "ScrollView";
+    wcScrView.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    RegisterClass(&wcScrView);
+
     // Progress bar
     icc.dwSize = sizeof(icc);
     icc.dwICC = ICC_PROGRESS_CLASS;
     InitCommonControlsEx(&icc);
 
     // ウィンドウ作成
-    hWnd = CreateWindow(wc.lpszClassName, TEXT("LatBlue"), WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
+    hWnd = CreateWindow(wc.lpszClassName, TEXT("LatBlue"), (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX), CW_USEDEFAULT, CW_USEDEFAULT, 640, 480, NULL, NULL, hInstance, NULL);
 
     // メニューバーの作成
     hMenuBar = CreateMenu();
@@ -185,16 +209,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    int w, h, x;
     char buf[1024];         // Buffar to print result of lattice
     char buf_delta[64];     // Buffer for reduction parameter
     char buf_gamma[64];     // Buffer for reduction parameter for deep-insertion
     char buf_beta[64];      // Buffar for block size
     static InputResult res; // result for input
     static HWND hResultText;
+    static HWND hLabelDelta;
+    static HWND hLabelBeta;
+    static HWND hLabelGamma;
     static HWND hEditDelta;
     static HWND hEditGamma;
     static HWND hEditBeta;
     static HWND hPopup;
+    static HWND hScrollView;
+    RECT rc;
+    const int height = 200;
 
     switch (msg)
     {
@@ -203,12 +234,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 150, hWnd, NULL, GetModuleHandle(NULL), NULL);
 
         // The window that we can input reduction parameter
-        CreateWindowW(L"STATIC", L"δ:", (WS_CHILD | WS_VISIBLE), 410, 10, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hLabelDelta = CreateWindowW(L"STATIC", L"δ:", (WS_CHILD | WS_VISIBLE), 410, 10, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditDelta = CreateWindowW(L"EDIT", L"0.99", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
-        CreateWindowW(L"STATIC", L"γ:", (WS_CHILD | WS_VISIBLE), 410, 40, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hLabelGamma = CreateWindowW(L"STATIC", L"γ:", (WS_CHILD | WS_VISIBLE), 410, 40, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditGamma = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 40, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
-        CreateWindowW(L"STATIC", L"β:", (WS_CHILD | WS_VISIBLE), 410, 70, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
+        hLabelBeta = CreateWindowW(L"STATIC", L"β:", (WS_CHILD | WS_VISIBLE), 410, 70, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditBeta = CreateWindowW(L"EDIT", L"40", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 70, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
+
+        // The window that lattice basis matrix is printed
+        GetClientRect(hWnd, &rc);
+        hScrollView = CreateWindowEx(
+            0,
+            "ScrollView",
+            NULL,
+            WS_CHILD | WS_VISIBLE | WS_BORDER |
+                WS_VSCROLL | WS_HSCROLL,
+            0,
+            rc.bottom - height,
+            rc.right,
+            height,
+            hWnd,
+            NULL,
+            GetModuleHandle(NULL),
+            NULL);
         break;
 
     case WM_COMMAND:
@@ -252,6 +300,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("InputPopup"), TEXT("Generate"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_FILE_EXIT:
@@ -265,6 +315,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_REDUCE_DEEP_LLL:
@@ -280,6 +332,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_REDUCE_POT_LLL:
@@ -289,6 +343,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_REDUCE_BKZ:
@@ -300,6 +356,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_REDUCE_POT_BKZ:
@@ -311,6 +369,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
             break;
 
         case ID_EDIT_COPY:
@@ -324,14 +384,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_APP + 1:
+        InvalidateRect(hScrollView, NULL, TRUE);
+        SendMessage(hScrollView, WM_PAINT, 0, 0);
         sprintf(buf, "Lattice basis generated!\r\nVolume = %s\r\nslope = %lf\r\nRHF = %s", ZZToString(res.vol).c_str(), res.slope, RRToString(res.rhf).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
 
     case WM_APP + 2:
+        InvalidateRect(hScrollView, NULL, TRUE);
+        SendMessage(hScrollView, WM_PAINT, 0, 0);
         sprintf(buf, "Lattice basis reduced!\r\nVolume = %s\r\nslope = %lf\r\nRHF = %s", ZZToString(res.vol).c_str(), res.slope, RRToString(res.rhf).c_str());
         SetWindowTextA(hResultText, buf);
         return 0;
+
+    case WM_SIZE:
+        w = LOWORD(lParam);
+        h = HIWORD(lParam);
+
+        MoveWindow(hResultText, MARGIN, MARGIN, w - RIGHT_WIDTH - 3 * MARGIN, TOP_HEIGHT - 2 * MARGIN, TRUE);
+
+        x = w - RIGHT_WIDTH + 10;
+
+        MoveWindow(hLabelDelta, x, 10, 30, 20, TRUE);
+        MoveWindow(hLabelGamma, x, 40, 30, 20, TRUE);
+        MoveWindow(hLabelBeta, x, 70, 30, 20, TRUE);
+
+        MoveWindow(hEditDelta, x + 30, 10, 90, 22, TRUE);
+        MoveWindow(hEditGamma, x + 30, 40, 90, 22, TRUE);
+        MoveWindow(hEditBeta, x + 30, 70, 90, 22, TRUE);
+
+        MoveWindow(hScrollView, 0, TOP_HEIGHT, w, h - TOP_HEIGHT, TRUE);
+
+        break;
 
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -493,4 +577,133 @@ bool OpenFileDialog(HWND hWnd, std::string &outPath)
         return true;
     }
     return false;
+}
+
+LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    std::string mat_str;
+    static int xPos = 0;
+    static int yPos = 0;
+
+    switch (msg)
+    {
+    case WM_SIZE:
+    {
+        RECT rc;
+        GetClientRect(hWnd, &rc);
+
+        int cx = rc.right - rc.left;
+        int cy = rc.bottom - rc.top;
+
+        int lineHeight = 12;
+        int contentHeight = lineHeight * 200; // lattice.rank * lineHeight + 20;
+        int contentWidth = 4000;              // 行の最大幅（仮）
+
+        SCROLLINFO si{sizeof(si), SIF_RANGE | SIF_PAGE | SIF_POS};
+
+        si.nMin = 0;
+        si.nMax = contentWidth - 1;
+        si.nPage = cx;
+        si.nPos = xPos;
+        SetScrollInfo(hWnd, SB_HORZ, &si, TRUE);
+
+        si.nMax = contentHeight - 1;
+        si.nPage = cy;
+        si.nPos = yPos;
+        SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+        return 0;
+    }
+
+    case WM_HSCROLL:
+    {
+        SCROLLINFO si{sizeof(si), SIF_ALL};
+        GetScrollInfo(hWnd, SB_HORZ, &si);
+
+        int old = si.nPos;
+        switch (LOWORD(wParam))
+        {
+        case SB_LINELEFT:
+            si.nPos -= 20;
+            break;
+        case SB_LINERIGHT:
+            si.nPos += 20;
+            break;
+        case SB_PAGELEFT:
+            si.nPos -= si.nPage;
+            break;
+        case SB_PAGERIGHT:
+            si.nPos += si.nPage;
+            break;
+        case SB_THUMBTRACK:
+            si.nPos = si.nTrackPos;
+            break;
+        }
+        SetScrollInfo(hWnd, SB_HORZ, &si, TRUE);
+        xPos = si.nPos;
+
+        if (old != xPos)
+            InvalidateRect(hWnd, NULL, TRUE);
+        break;
+    }
+
+    case WM_VSCROLL:
+    {
+        SCROLLINFO si{sizeof(si), SIF_ALL};
+        GetScrollInfo(hWnd, SB_VERT, &si);
+
+        int old = si.nPos;
+        switch (LOWORD(wParam))
+        {
+        case SB_LINEUP:
+            si.nPos -= 20;
+            break;
+        case SB_LINEDOWN:
+            si.nPos += 20;
+            break;
+        case SB_PAGEUP:
+            si.nPos -= si.nPage;
+            break;
+        case SB_PAGEDOWN:
+            si.nPos += si.nPage;
+            break;
+        case SB_THUMBTRACK:
+            si.nPos = si.nTrackPos;
+            break;
+        }
+        SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
+        yPos = si.nPos;
+
+        if (old != yPos)
+        {
+            InvalidateRect(hWnd, NULL, TRUE);
+        }
+        break;
+    }
+
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        SetViewportOrgEx(hdc, -xPos, -yPos, NULL);
+
+        if (lattice.rank >= 1)
+        {
+            for (int i = 0; i < lattice.rank; ++i)
+            {
+                mat_str = vec_ZZToString(lattice.basis[i]);
+                TextOut(hdc, 10, 10 + 17 * i, mat_str.c_str(), mat_str.length());
+            }
+        }
+        else
+        {
+            TextOutW(hdc, 50, 50, L"スクロール可能ビュー", 10);
+            TextOutW(hdc, 50, 1000, L"下まで行けるよ", 8);
+        }
+
+        EndPaint(hWnd, &ps);
+        break;
+    }
+    }
+    return DefWindowProc(hWnd, msg, wParam, lParam);
 }

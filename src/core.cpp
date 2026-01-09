@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <regex>
 
 #include <NTL/ZZ.h>
 #include <NTL/vec_ZZ.h>
@@ -29,6 +30,20 @@ std::string RRToString(const NTL::RR &r)
     std::stringstream buffer;
     buffer << r;
     return buffer.str();
+}
+
+std::string vec_ZZToString(const NTL::vec_ZZ &x)
+{
+    std::stringstream buffer;
+    buffer << x;
+    return buffer.str();
+}
+
+std::string mat_ZZToString(const NTL::mat_ZZ &b)
+{
+    std::stringstream buffer;
+    buffer << b;
+    return std::regex_replace(buffer.str(), std::regex("\n"), "\r\n");
 }
 
 NTL::RR Dot(const NTL::vec_ZZ a, const NTL::vec_ZZ b)

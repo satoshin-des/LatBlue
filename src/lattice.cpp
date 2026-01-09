@@ -7,6 +7,7 @@
 #include <NTL/LLL.h>
 
 #include "core.h"
+#include "reduction.h"
 
 Lattice lattice;
 
@@ -259,7 +260,7 @@ bool PotENUM(const int start, const int d, NTL::vec_ZZ &v)
         temp = NTL::to_RR(v[k]) - c[k];
         temp *= temp;
         D[k] = D[k + 1] + temp * lattice.B[k + start];
-        if ((k + 1) * NTL::log(D[k]) + P < (k + 1) * LOG099 + R)
+        if ((k + 1) * NTL::log(D[k]) + P < (k + 1) * std::log(delta) + R)
         {
             if (k == 0)
             {

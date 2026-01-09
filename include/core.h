@@ -7,8 +7,8 @@
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
 #include <NTL/vec_ZZ.h>
+#include <NTL/mat_ZZ.h>
 
-#define LOG099 -0.010050335853501441183548857558547706085515007674629873378 // log(0.99)
 #define MIN(a, b) a < b ? a : b
 #define MAX(a, b) a > b ? a : b
 
@@ -51,6 +51,16 @@ std::string ZZToString(const NTL::ZZ &z);
  * @return std::string Converted string
  */
 std::string RRToString(const NTL::RR &r);
+
+std::string vec_ZZToString(const NTL::vec_ZZ &x);
+
+/**
+ * @brief Converts NTL::mat_RR to std::string
+ *
+ * @param b matrix to convert
+ * @return std::string Converted string
+ */
+std::string mat_ZZToString(const NTL::mat_ZZ &b);
 
 /**
  * @brief Generates Goldstein-Mayer lattice
