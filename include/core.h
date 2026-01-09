@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+#include <windows.h>
+
 #include <NTL/ZZ.h>
 #include <NTL/RR.h>
 #include <NTL/vec_ZZ.h>
@@ -68,5 +70,7 @@ std::string mat_ZZToString(const NTL::mat_ZZ &b);
  * @param seed seed for random-generation
  */
 void Generator(const int rank, const int seed);
+
+void PrintRef(HWND hWnd);
 
 #endif // !CORE_H

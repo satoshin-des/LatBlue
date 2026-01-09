@@ -34,6 +34,7 @@
 #define ID_REDUCE_DEEP_LLL 4003
 #define ID_REDUCE_POT_LLL 4004
 #define ID_REDUCE_POT_BKZ 4005
+#define ID_REFERENCE 6001
 #define WM_APP_PROGRESS (WM_APP + 10)
 #define WM_APP_FINISH (WM_APP + 11)
 
@@ -126,8 +127,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WNDCLASS wcScrView = {}; // Window class for printing lattice basis
     HWND hWnd;               // ウィンドウ
     HMENU hMenuBar;          // メニューバー
-    HMENU hFileMenu;         // ファイル
-    HMENU hEditMenu;         // 編集
+    HMENU hFileMenu;         // File
+    HMENU hEditMenu;         // Edit
     HMENU hReduceMenu;       // Reduce menu
     MSG msg;                 // メッセージ
     INITCOMMONCONTROLSEX icc{};
@@ -197,6 +198,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Append to menu bar
     AppendMenu(hMenuBar, MF_POPUP, (UINT_PTR)hFileMenu, TEXT("File"));
     AppendMenu(hMenuBar, MF_POPUP, (UINT_PTR)hEditMenu, TEXT("Edit"));
+    AppendMenu(hMenuBar, MF_STRING, ID_REFERENCE, TEXT("Reference"));
 
     // ウィンドウに設定
     SetMenu(hWnd, hMenuBar);
@@ -382,6 +384,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             MessageBox(hWnd, "Matrix copied to clipboard!", "Copy", MB_OK);
             break;
         }
+
+        case ID_REFERENCE:
+            PrintRef(hWnd);
+            break;
         }
         return 0;
 
