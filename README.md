@@ -46,3 +46,10 @@ If you select "File>Generate", you can generate a random Goldstein-Mayar lattice
 If you select "Edit>Reduce", you can choose lattice reduction algorithms from LLL, DeepLLL, PotLLL, BKZ, and PotBKZ now. It will be updated.
 
 If you select "Edit>Copy", you can copy lattice basis to clipboard.
+
+## Cautions
+
+- The developers of LatBlue do not take responsibility or liability for any losses, disadvantages, or damages by downloading or executing LatBlue.
+- The all users of LatBlue must not commit a tort with LatBlue.
+- The all users of LatBlue must not be against public policy using LatBlue.
+- The all users must not upload the zip file or exe files on the internet without the diveloper of LatBlue's permission.
