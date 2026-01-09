@@ -251,20 +251,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         // The window that lattice basis matrix is printed
         GetClientRect(hWnd, &rc);
-        hScrollView = CreateWindowEx(
-            0,
-            "ScrollView",
-            NULL,
-            WS_CHILD | WS_VISIBLE | WS_BORDER |
-                WS_VSCROLL | WS_HSCROLL,
-            0,
-            rc.bottom - height,
-            rc.right,
-            height,
-            hWnd,
-            NULL,
-            GetModuleHandle(NULL),
-            NULL);
+        hScrollView = CreateWindowEx(0, "ScrollView", NULL, (WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | WS_HSCROLL), 0, rc.bottom - height, rc.right, height, hWnd, NULL, GetModuleHandle(NULL), NULL);
         break;
 
     case WM_COMMAND:
@@ -583,7 +570,7 @@ bool OpenFileDialog(HWND hWnd, std::string &outPath)
         "All Files (*.*)\0*.*\0";
     ofn.lpstrFile = fileName;
     ofn.nMaxFile = MAX_PATH;
-    ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+    ofn.Flags = (OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST);
     ofn.lpstrTitle = "Open File";
 
     if (GetOpenFileName(&ofn))
@@ -638,7 +625,7 @@ LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
         int contentHeight = lineHeight * 200; // lattice.rank * lineHeight + 20;
         int contentWidth = 4000;              // 行の最大幅（仮）
 
-        SCROLLINFO si{sizeof(si), SIF_RANGE | SIF_PAGE | SIF_POS};
+        SCROLLINFO si{sizeof(si), (SIF_RANGE | SIF_PAGE | SIF_POS)};
 
         si.nMin = 0;
         si.nMax = contentWidth - 1;
@@ -733,11 +720,6 @@ LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
                 mat_str = vec_ZZToString(lattice.basis[i]);
                 TextOut(hdc, 10, 10 + 17 * i, mat_str.c_str(), mat_str.length());
             }
-        }
-        else
-        {
-            TextOutW(hdc, 50, 50, L"スクロール可能ビュー", 10);
-            TextOutW(hdc, 50, 1000, L"下まで行けるよ", 8);
         }
 
         EndPaint(hWnd, &ps);
