@@ -109,6 +109,15 @@ LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
  */
 bool OpenFileDialog(HWND hWnd, std::string &outPath);
 
+/**
+ * @brief Copy text to clipboard
+ * The almost of this function is written with AI
+ *
+ * @param hWnd
+ * @param text
+ */
+void CopyTextToClipboard(HWND hWnd, const std::string &text);
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     WNDCLASS wc = {};        // Window class
@@ -180,13 +189,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_BKZ, TEXT("PotBKZ"));
 
-    // 編集
+    // Edit
     AppendMenu(hEditMenu, MF_POPUP, (UINT_PTR)hReduceMenu, TEXT("Reduce"));
     AppendMenu(hEditMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hEditMenu, MF_STRING, ID_EDIT_COPY, TEXT("Copy"));
-    AppendMenu(hEditMenu, MF_STRING, ID_EDIT_PASTE, TEXT("Paste"));
 
-    // メニューバーへ追加
+    // Append to menu bar
     AppendMenu(hMenuBar, MF_POPUP, (UINT_PTR)hFileMenu, TEXT("File"));
     AppendMenu(hMenuBar, MF_POPUP, (UINT_PTR)hEditMenu, TEXT("Edit"));
 
@@ -374,12 +382,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case ID_EDIT_COPY:
-            MessageBox(hWnd, TEXT("Copy"), TEXT("Menu"), MB_OK);
-            break;
+        {
+            if (lattice.rank <= 0)
+            {
+                MessageBox(hWnd, "No matrix to copy.", "Info", MB_OK);
+                break;
+            }
 
-        case ID_EDIT_PASTE:
-            MessageBox(hWnd, TEXT("Paste"), TEXT("Menu"), MB_OK);
+            std::string mat = mat_ZZToString(lattice.basis);
+            CopyTextToClipboard(hWnd, mat);
+
+            MessageBox(hWnd, "Matrix copied to clipboard!", "Copy", MB_OK);
             break;
+        }
         }
         return 0;
 
@@ -577,6 +592,30 @@ bool OpenFileDialog(HWND hWnd, std::string &outPath)
         return true;
     }
     return false;
+}
+
+void CopyTextToClipboard(HWND hWnd, const std::string &text)
+{
+    if (!OpenClipboard(hWnd))
+    {
+        return;
+    }
+
+    EmptyClipboard();
+
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, text.size() + 1);
+    if (!hMem)
+    {
+        CloseClipboard();
+        return;
+    }
+
+    char *p = (char *)GlobalLock(hMem);
+    memcpy(p, text.c_str(), text.size() + 1);
+    GlobalUnlock(hMem);
+
+    SetClipboardData(CF_TEXT, hMem);
+    CloseClipboard();
 }
 
 LRESULT CALLBACK ScrollViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
