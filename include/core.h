@@ -25,7 +25,8 @@ enum REDUCE
     DEEP_LLL,
     POT_LLL,
     BLOCK_KZ,
-    POT_BKZ
+    POT_BKZ,
+    DEEP_BKZ
 };
 
 extern REDUCE reduce; // Reduction algorithm

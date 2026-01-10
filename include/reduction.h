@@ -39,6 +39,8 @@ void LLLReduce(const int end, const int h);
  */
 void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
 
+void DeepLLLReduce(const int end, const int h);
+
 /**
  * @brief Applies PotLLL-reduction for lattice basis
  *
@@ -49,6 +51,10 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
  */
 void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h);
 
+/**
+ * @brief Applies PotLLL-reduction
+ *
+ */
 void PotLLLReduce();
 
 /**
@@ -58,6 +64,8 @@ void PotLLLReduce();
  * @param Msg
  */
 void BKZReduce(HWND hWnd, UINT Msg);
+
+void DeepBKZReduce(HWND hWnd, UINT Msg);
 
 /**
  * @brief Applies PotBKZ-reduction for lattice basis

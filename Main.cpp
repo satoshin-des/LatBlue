@@ -19,7 +19,6 @@
 #define RIGHT_WIDTH 140
 #define MARGIN 10
 
-#define TIMER_AUTO_CLOSE 1
 #define ID_FILE_OPEN 1001
 #define ID_FILE_EXIT 1002
 #define ID_SVP_GENERATE 1003
@@ -34,6 +33,7 @@
 #define ID_REDUCE_DEEP_LLL 4003
 #define ID_REDUCE_POT_LLL 4004
 #define ID_REDUCE_POT_BKZ 4005
+#define ID_REDUCE_DEEP_BKZ 4006
 #define ID_REFERENCE 6001
 #define WM_APP_PROGRESS (WM_APP + 10)
 #define WM_APP_FINISH (WM_APP + 11)
@@ -188,6 +188,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_LLL, TEXT("DeepLLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_LLL, TEXT("PotLLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_BKZ, TEXT("DeepBKZ"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_BKZ, TEXT("PotBKZ"));
 
     // Edit
@@ -357,6 +358,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        case ID_REDUCE_DEEP_BKZ:
+            GetWindowText(hEditDelta, buf_delta, 64);
+            delta = std::clamp(atof(buf_delta), 0.25, 1.0);
+            GetWindowText(hEditBeta, buf_beta, 64);
+            beta = std::clamp(atoi(buf_beta), 2, (int)lattice.rank);
+            GetWindowText(hEditGamma, buf_gamma, 64);
+            if (atoi(buf_gamma) <= 0)
+            {
+                gamma = lattice.rank;
+            }
+            gamma = std::clamp(atoi(buf_gamma), 1, (int)lattice.rank);
+            reduce = REDUCE::DEEP_BKZ;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
+            break;
+
         case ID_REDUCE_POT_BKZ:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -381,7 +401,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             std::string mat = mat_ZZToString(lattice.basis);
             CopyTextToClipboard(hWnd, mat);
 
-            MessageBox(hWnd, "Matrix copied to clipboard!", "Copy", MB_OK);
+            MessageBox(hWnd, "Lattice basis copied to clipboard!", "Copy", MB_OK);
             break;
         }
 
@@ -551,6 +571,10 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     case REDUCE::BLOCK_KZ:
         BKZReduce(hWnd, WM_APP_PROGRESS);
+        break;
+
+    case REDUCE::DEEP_BKZ:
+        DeepBKZReduce(hWnd, WM_APP_PROGRESS);
         break;
 
     case REDUCE::POT_BKZ:

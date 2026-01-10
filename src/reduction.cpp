@@ -230,6 +230,51 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
     }
 }
 
+void DeepLLLReduce(const int end, const int h)
+{
+    bool flag;
+    NTL::RR C;
+
+    for (int k = h, j, i; k < end;)
+    {
+        for (j = k - 1; j > -1; --j)
+        {
+            SizeReduce(k, j);
+        }
+
+        C = Dot(lattice.basis[k], lattice.basis[k]);
+        for (i = 0; i < k;)
+        {
+            if ((i > -1) && (C < delta * lattice.B[i]))
+            {
+                flag = ((i - 1 <= gamma) || (k - i < gamma));
+            }
+
+            if (flag)
+            {
+                if (C >= delta * lattice.B[i])
+                {
+                    C -= lattice.mu[k][i] * lattice.mu[k][i] * lattice.B[i];
+                    ++i;
+                }
+                else
+                {
+                    DeepInsertion(i, k);
+                    UpdateDeepInsertionGSO(i, k, end);
+
+                    k = MAX(i - 1, 0);
+                }
+            }
+            else
+            {
+                C -= lattice.mu[k][i] * lattice.mu[k][i] * lattice.B[i];
+                ++i;
+            }
+        }
+        ++k;
+    }
+}
+
 void PotLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
 {
     NTL::RR P, P_min, S;
@@ -411,9 +456,94 @@ void BKZReduce(HWND hWnd, UINT Msg)
     }
 }
 
+void DeepBKZReduce(HWND hWnd, UINT Msg)
+{
+    double prog_ratio_1 = 0.0;
+    double prog_ratio_2 = 0.0;
+    NTL::vec_ZZ v;
+    NTL::vec_ZZ w;
+    NTL::mat_ZZ tmp_mat;
+
+    NTL::LLL_XD(lattice.basis);
+    ComputeGSO();
+    DeepLLLReduce(lattice.rank, 0);
+    for (int i = 10; i <= beta; i += 2)
+    {
+        NTL::BKZ_FP(lattice.basis, 0.99, i);
+    }
+    ComputeGSO();
+    for (int z = 0, k = 0, loops = 0, l, h, i, j; z < lattice.rank - 2;)
+    {
+        if (z * 100.0 / (lattice.rank - 2.0) > prog_ratio_1)
+        {
+            prog_ratio_1 = z * 100.0 / (lattice.rank - 2.0);
+        }
+        if (100.0 * loops / max_loop > prog_ratio_2)
+        {
+            prog_ratio_2 = 100.0 * loops / max_loop;
+        }
+        PostMessageA(hWnd, Msg, MAX(prog_ratio_1, prog_ratio_2), 0);
+
+        if (loops >= max_loop)
+        {
+            break;
+        }
+
+        if (k == lattice.rank - 1)
+        {
+            k = 0;
+            ++loops;
+        }
+        ++k;
+        l = MIN(k + beta - 1, lattice.rank);
+        h = MIN(l + 1, lattice.rank);
+        if (ENUM(k - 1, l, w))
+        {
+            z = 0;
+
+            v.SetLength(lattice.rank);
+            for (i = 0; i < lattice.rank; ++i)
+            {
+                for (j = 0; j < w.length(); ++j)
+                {
+                    v[i] += w[j] * lattice.basis[j + k - 1][i];
+                }
+            }
+
+            tmp_mat.SetDims(h + 1, lattice.rank);
+            for (j = 0; j < lattice.rank; ++j)
+            {
+                for (i = 0; i < k - 1; ++i)
+                {
+                    tmp_mat[i][j] = lattice.basis[i][j];
+                }
+                tmp_mat[k - 1][j] = v[j];
+                for (i = k; i <= h; ++i)
+                {
+                    tmp_mat[i][j] = lattice.basis[i - 1][j];
+                }
+            }
+            NTL::LLL_FP(tmp_mat);
+            for (i = 1; i <= h; ++i)
+            {
+                for (j = 0; j < lattice.rank; ++j)
+                {
+                    lattice.basis[i - 1][j] = tmp_mat[i][j];
+                }
+            }
+            ComputeGSO();
+            DeepLLLReduce(h, k);
+        }
+        else
+        {
+            ++z;
+            DeepLLLReduce(h, h - 1);
+        }
+    }
+}
+
 void PotBKZReduce(HWND hWnd, UINT Msg)
 {
-    const int n1 = lattice.rank - 1;
     double prog_ratio = 0;
     NTL::vec_ZZ v, w;
     NTL::mat_ZZ tmp_mat;
