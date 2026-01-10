@@ -21,6 +21,7 @@
 enum REDUCE
 {
     NONE,
+    SIZE_REDUCE,
     LLL,
     DEEP_LLL,
     POT_LLL,

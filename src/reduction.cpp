@@ -15,6 +15,37 @@ int gamma;
 int beta;
 int max_loop = 5;
 
+void SizeReduce(HWND hWnd, UINT Msg)
+{
+    NTL::ZZ q;
+    double prog_ratio = 0.0;
+
+    ComputeGSO();
+
+    for (int i = 1, j, k; i < lattice.rank; ++i)
+    {
+        if (i * 100.0 / (lattice.rank - 1.0) > prog_ratio)
+        {
+            prog_ratio = i * 100.0 / (lattice.rank - 1.0);
+        }
+        PostMessageA(hWnd, Msg, (int)std::round(prog_ratio), 0);
+
+        for (j = i - 1; j > -1; --j)
+        {
+            if ((lattice.mu[i][j] > 0.5) || (lattice.mu[i][j] < -0.5))
+            {
+                q = NTL::RoundToZZ(lattice.mu[i][j]);
+
+                lattice.basis[i] -= q * lattice.basis[j];
+                for (k = 0; k <= j; ++k)
+                {
+                    lattice.mu[i][k] -= lattice.mu[j][k] * NTL::to_RR(q);
+                }
+            }
+        }
+    }
+}
+
 void SizeReduce(const int i, const int j)
 {
     if ((lattice.mu[i][j] > 0.5) || (lattice.mu[i][j] < -0.5))

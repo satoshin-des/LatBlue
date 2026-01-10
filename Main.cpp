@@ -34,6 +34,7 @@
 #define ID_REDUCE_POT_LLL 4004
 #define ID_REDUCE_POT_BKZ 4005
 #define ID_REDUCE_DEEP_BKZ 4006
+#define ID_REDUCE_SIZE 4007
 #define ID_REFERENCE 6001
 #define WM_APP_PROGRESS (WM_APP + 10)
 #define WM_APP_FINISH (WM_APP + 11)
@@ -184,6 +185,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hFileMenu, MF_STRING, ID_FILE_EXIT, TEXT("Quit"));
 
     // Reduce
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_SIZE, TEXT("size"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_LLL, TEXT("LLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_LLL, TEXT("DeepLLL"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_LLL, TEXT("PotLLL"));
@@ -390,6 +392,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        case ID_REDUCE_SIZE:
+            reduce = REDUCE::SIZE_REDUCE;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
+            break;
+
         case ID_EDIT_COPY:
         {
             if (lattice.rank <= 0)
@@ -557,6 +568,10 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     switch (reduce)
     {
+    case REDUCE::SIZE_REDUCE:
+        SizeReduce(hWnd, WM_APP_PROGRESS);
+        break;
+
     case REDUCE::LLL:
         L2Reduce(hWnd, WM_APP_PROGRESS);
         break;
@@ -579,6 +594,9 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     case REDUCE::POT_BKZ:
         PotBKZReduce(hWnd, WM_APP_PROGRESS);
+        break;
+
+    case REDUCE::NONE:
         break;
     }
 

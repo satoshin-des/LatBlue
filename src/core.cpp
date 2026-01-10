@@ -84,7 +84,7 @@ void PrintRef(HWND hWnd)
     refs.emplace_back(L"P. Q. Nguyen and D. Stehlé. Floating-point LLL revisited. 2004\r\n");
     refs.emplace_back(L"P. Q. Nguyen and D. Stehlé. An LLL algorithm with quadratic complexity. 2009\r\n");
     refs.emplace_back(L"N. Gama, P. Q. Nguyen, and, O. Regev. Lattice enumeration using extreme pruning. 2010\r\n");
-    refs.emplace_back(L"M.R. Bremner. Lattice Basis Reduction: An Introduction to the LLL Algorithm and Its Applications. 2011\r\n");
+    refs.emplace_back(L"M. R. Bremner. Lattice Basis Reduction: An Introduction to the LLL Algorithm and Its Applications. 2011\r\n");
     refs.emplace_back(L"F. Fontein, M. Schneider, and U. Wagner. PotLLL: A polynomial time version of LLL with deep insertions. 2014\r\n");
     refs.emplace_back(L"J. Yamaguchi and M. Yasuda. Explicit formula for Gram-Schmidt vectors in LLL with deep insertions and its applications. 2017\r\n");
     refs.emplace_back(L"R. Bottesch, M. W. Haslbeck, and R. Thiemann. A verified efficient implementation of the LLL basis reduction algorithm. 2018\r\n");
