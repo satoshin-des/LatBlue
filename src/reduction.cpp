@@ -248,7 +248,7 @@ void DeepLLLReduce(HWND hWnd, UINT Msg, const int end, const int h)
                     DeepInsertion(i, k);
                     UpdateDeepInsertionGSO(i, k, end);
 
-                    k = std::max(i - 1, 0);
+                    k = MAX(i - 1, 0);
                 }
             }
             else
