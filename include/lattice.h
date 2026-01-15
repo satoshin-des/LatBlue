@@ -3,6 +3,7 @@
 
 #include <NTL/mat_ZZ.h>
 #include <NTL/vec_RR.h>
+#include <NTL/vec_double.h>
 #include <NTL/mat_RR.h>
 
 struct Lattice
@@ -55,13 +56,23 @@ NTL::RR ComputeRHF();
 NTL::RR LogPot();
 
 /**
- * @brief 
- * 
- * @param start 
- * @param end 
- * @param v 
- * @return true 
- * @return false 
+ * @brief function to prune ENUM algorithm
+ * https://github.com/fplll/fplll/blob/master/strategies/default.json
+ *
+ * @param flag pruning or not
+ * @param d dimension
+ * @return NTL::vec_double prunimng coefficient
+ */
+NTL::vec_double prune(const bool flag, const int d);
+
+/**
+ * @brief
+ *
+ * @param start
+ * @param end
+ * @param v
+ * @return true
+ * @return false
  */
 bool ENUM(const int start, const int end, NTL::vec_ZZ &v);
 

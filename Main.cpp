@@ -237,6 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     static HWND hEditBeta;
     static HWND hPopup;
     static HWND hScrollView;
+    static HWND hCheckPruning;
     RECT rc;
     const int height = 200;
 
@@ -253,6 +254,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         hEditGamma = CreateWindowW(L"EDIT", L"", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 40, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         hLabelBeta = CreateWindowW(L"STATIC", L"β:", (WS_CHILD | WS_VISIBLE), 410, 70, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditBeta = CreateWindowW(L"EDIT", L"40", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 70, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
+        hCheckPruning = CreateWindow("BUTTON", "pruning", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 410, 100, 120, 20, hWnd, (HMENU)7002, GetModuleHandle(NULL), NULL);
 
         // The window that lattice basis matrix is printed
         GetClientRect(hWnd, &rc);
@@ -352,6 +354,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
             GetWindowText(hEditBeta, buf_beta, 64);
             beta = std::clamp(atoi(buf_beta), 2, (int)lattice.rank);
+            pruning = (SendMessage(hCheckPruning, BM_GETCHECK, 0, 0) == BST_CHECKED);
             reduce = REDUCE::BLOCK_KZ;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
@@ -365,6 +368,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
             GetWindowText(hEditBeta, buf_beta, 64);
             beta = std::clamp(atoi(buf_beta), 2, (int)lattice.rank);
+            pruning = (SendMessage(hCheckPruning, BM_GETCHECK, 0, 0) == BST_CHECKED);
             GetWindowText(hEditGamma, buf_gamma, 64);
             if (atoi(buf_gamma) <= 0)
             {
@@ -451,6 +455,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         MoveWindow(hEditDelta, x + 30, 10, 90, 22, TRUE);
         MoveWindow(hEditGamma, x + 30, 40, 90, 22, TRUE);
         MoveWindow(hEditBeta, x + 30, 70, 90, 22, TRUE);
+
+        MoveWindow(hCheckPruning, x, 100, 120, 20, TRUE);
 
         MoveWindow(hScrollView, 0, TOP_HEIGHT, w, h - TOP_HEIGHT, TRUE);
 

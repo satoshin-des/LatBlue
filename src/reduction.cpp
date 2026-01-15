@@ -14,6 +14,7 @@ double delta = 0.99;
 int gamma;
 int beta;
 int max_loop = 5;
+bool pruning;
 
 void SizeReduce(HWND hWnd, UINT Msg)
 {

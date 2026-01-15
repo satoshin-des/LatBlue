@@ -93,6 +93,7 @@ void PrintRef(HWND hWnd)
     refs.emplace_back(L"L. Ducas, L. N. Pulles, and M. Stevens. Towards a modern LLL implementation. 2025\r\n");
     refs.emplace_back(L"佐藤 新 and 安田 雅哉. 自己双対型PotBKZ基底簡約の提案とBKZとの比較. 2025\r\n");
     refs.emplace_back(L"V. Shoup. NTL: A Library for doing Number Theory. http://www.shoup.net/ntl/\r\n");
+    refs.emplace_back(L"The FPLLL development team. fplll, a lattice reduction library, Version: 5.5.0. https://github.com/fplll/fplll. 2023\r\n");
     refs.emplace_back(L"TU Darmstadt. SVP Challenge. https://www.latticechallenge.org/svp-challenge/\r\n");
     for (std::wstring s : refs)
     {

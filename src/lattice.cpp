@@ -5,6 +5,7 @@
 #include <NTL/RR.h>
 #include <NTL/mat_RR.h>
 #include <NTL/LLL.h>
+#include <NTL/vec_double.h>
 
 #include "core.h"
 #include "reduction.h"
@@ -146,13 +147,13 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
     const int d = end - start; // dimension of local projected block lattice
 
     int i, r[d + 1];
-    NTL::RR tmp_val;     // temporary of NTL::RR
-    NTL::vec_RR radius;  // radius for searching
-    NTL::vec_ZZ tmp_vec; // temporary of NTL::vec_ZZ
-    NTL::vec_ZZ width;   // width for zigzag-searching
-    NTL::vec_RR eps;     // width for radius for searching
-    NTL::vec_RR center;  // center of zigzag-searching
-    NTL::vec_RR rho;     // squared norm of projected lattice vector
+    double tmp_val;         // temporary of double
+    NTL::vec_double radius; // radius for searching
+    NTL::vec_ZZ tmp_vec;    // temporary of NTL::vec_ZZ
+    NTL::vec_ZZ width;      // width for zigzag-searching
+    NTL::vec_double eps;    // width for radius for searching
+    NTL::vec_RR center;     // center of zigzag-searching
+    NTL::vec_RR rho;        // squared norm of projected lattice vector
     NTL::mat_RR sigma;
 
     radius.SetLength(d);
@@ -162,6 +163,8 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
     sigma.SetDims(d + 1, d);
     v.SetLength(d);
     eps.SetLength(d);
+    eps = prune(pruning, d);
+    
     tmp_vec.SetLength(d);
     tmp_vec[0] = 1;
     for (i = 0; i < d; ++i)
@@ -172,12 +175,12 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
 
     for (i = 0; i < d; ++i)
     {
-        radius[i] = eps[d - i - 1] * lattice.B[start];
+        radius[i] = NTL::to_double(eps[d - i - 1] * lattice.B[start]);
     }
 
     for (int k = 0, last_nonzero = 0;;)
     {
-        tmp_val = NTL::to_RR(tmp_vec[k]) - center[k];
+        tmp_val = NTL::to_double(tmp_vec[k]) - NTL::to_double(center[k]);
         tmp_val *= tmp_val;
         rho[k] = rho[k + 1] + tmp_val * lattice.B[k + start];
         if (rho[k] <= radius[d - k - 1])
@@ -191,7 +194,7 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
                 }
                 for (i = 0; i < d; ++i)
                 {
-                    radius[i] = 0.99 * MIN(0.99 * rho[0], radius[i]);
+                    radius[i] = 0.99 * MIN(NTL::to_double(0.99 * rho[0]), radius[i]);
                 }
             }
             else

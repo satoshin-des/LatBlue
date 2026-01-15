@@ -10,6 +10,7 @@ extern double delta; // reduction parameter
 extern int gamma;    // reduction parameter for deep-insertion
 extern int beta;     // block-size
 extern int max_loop; // max tour loops for BKZ
+extern bool pruning;
 
 void SizeReduce(HWND hWnd, UINT Msg);
 
