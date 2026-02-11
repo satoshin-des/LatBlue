@@ -18,6 +18,8 @@ void SizeReduce(const int i, const int j);
 
 void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s);
 
+void DualSize(HWND hWnd, UINT Msg);
+
 /**
  * @brief Applies LLL-reduction for lattice basis with L2 algorithm
  *

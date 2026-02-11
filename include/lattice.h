@@ -12,6 +12,7 @@ struct Lattice
     NTL::mat_ZZ basis;
     NTL::vec_RR B;
     NTL::mat_RR mu;
+    NTL::mat_RR nu;
 };
 
 extern Lattice lattice;

@@ -35,6 +35,7 @@
 #define ID_REDUCE_POT_BKZ 4005
 #define ID_REDUCE_DEEP_BKZ 4006
 #define ID_REDUCE_SIZE 4007
+#define ID_REDUCE_DUAL_SIZE 4008
 #define ID_REFERENCE 6001
 #define WM_APP_PROGRESS (WM_APP + 10)
 #define WM_APP_FINISH (WM_APP + 11)
@@ -192,6 +193,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_BKZ, TEXT("BKZ"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DEEP_BKZ, TEXT("DeepBKZ"));
     AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_POT_BKZ, TEXT("PotBKZ"));
+    AppendMenu(hReduceMenu, MF_STRING, ID_REDUCE_DUAL_SIZE, TEXT("Dual-size"));
 
     // Edit
     AppendMenu(hEditMenu, MF_POPUP, (UINT_PTR)hReduceMenu, TEXT("Reduce"));
@@ -247,7 +249,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         // The window that displays now lattice basis information
         hResultText = CreateWindow("STATIC", "Result will be shown here.", (WS_CHILD | WS_VISIBLE | SS_LEFT), 10, 10, 400, 150, hWnd, NULL, GetModuleHandle(NULL), NULL);
 
-        // The window that we can input reduction parameter
+        // The window that we can input reduction parameters
         hLabelDelta = CreateWindowW(L"STATIC", L"δ:", (WS_CHILD | WS_VISIBLE), 410, 10, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
         hEditDelta = CreateWindowW(L"EDIT", L"0.99", (WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL), 440, 10, 90, 22, hWnd, (HMENU)5001, GetModuleHandle(NULL), NULL);
         hLabelGamma = CreateWindowW(L"STATIC", L"γ:", (WS_CHILD | WS_VISIBLE), 410, 40, 30, 20, hWnd, NULL, GetModuleHandle(NULL), NULL);
@@ -310,6 +312,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             DestroyWindow(hWnd);
             break;
 
+        // LLL reduce
         case ID_REDUCE_LLL:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -321,6 +324,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // DeepLLL reduce
         case ID_REDUCE_DEEP_LLL:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.2501, 0.999);
@@ -338,6 +342,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // PotLLL reduce
         case ID_REDUCE_POT_LLL:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -349,6 +354,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // BKZ reduce
         case ID_REDUCE_BKZ:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -363,6 +369,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // DeepBKZ reduce
         case ID_REDUCE_DEEP_BKZ:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -383,6 +390,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // PotBKZ reduce
         case ID_REDUCE_POT_BKZ:
             GetWindowText(hEditDelta, buf_delta, 64);
             delta = std::clamp(atof(buf_delta), 0.25, 1.0);
@@ -396,8 +404,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             UpdateWindow(hScrollView);
             break;
 
+        // size reduce
         case ID_REDUCE_SIZE:
             reduce = REDUCE::SIZE_REDUCE;
+            hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
+            ShowWindow(hPopup, SW_SHOW);
+            UpdateWindow(hPopup);
+            ShowWindow(hScrollView, SW_SHOW);
+            UpdateWindow(hScrollView);
+            break;
+
+        case ID_REDUCE_DUAL_SIZE:
+            reduce = REDUCE::DUAL_SIZE;
             hPopup = CreateWindowEx(WS_EX_DLGMODALFRAME, TEXT("ReducePopup"), TEXT("Reduce"), (WS_POPUP | WS_CAPTION | WS_SYSMENU), CW_USEDEFAULT, CW_USEDEFAULT, 300, 140, hWnd, NULL, GetModuleHandle(NULL), &res);
             ShowWindow(hPopup, SW_SHOW);
             UpdateWindow(hPopup);
@@ -600,6 +618,10 @@ DWORD WINAPI ReduceWorkerThread(LPVOID param)
 
     case REDUCE::POT_BKZ:
         PotBKZReduce(hWnd, WM_APP_PROGRESS);
+        break;
+
+    case REDUCE::DUAL_SIZE:
+        DualSize(hWnd, WM_APP_PROGRESS);
         break;
 
     case REDUCE::NONE:

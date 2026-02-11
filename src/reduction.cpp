@@ -117,6 +117,50 @@ void SizeReduceL2(const double eta, const int k, NTL::mat_RR &r, NTL::vec_RR &s)
     }
 }
 
+void DualSize(HWND hWnd, UINT Msg)
+{
+    NTL::ZZ q;
+    double prog_ratio = 0.0;
+
+    ComputeGSO();
+
+    for (int k = lattice.rank - 1, j, i; k > -1; --k)
+    {
+        if ((lattice.rank - 1 - k) * 100.0 / (lattice.rank - 1.0) > prog_ratio)
+        {
+            prog_ratio = (lattice.rank - 1 - k) * 100.0 / (lattice.rank - 1.0);
+        }
+        PostMessageA(hWnd, Msg, (int)std::round(prog_ratio), 0);
+
+        lattice.nu[k][k] = 1.0;
+
+        for (j = k + 1; j < lattice.rank; ++j)
+        {
+            lattice.nu[k][j] = 0;
+            for (i = k; i < j; ++i)
+            {
+                lattice.nu[k][j] -= lattice.mu[j][i] * lattice.nu[k][i];
+            }
+
+            if ((lattice.nu[k][j] > 0.5) || (lattice.nu[k][j] < -0.5))
+            {
+                q = NTL::RoundToZZ(lattice.nu[k][j]);
+                lattice.basis[j] += q * lattice.basis[k];
+                // nu.row(k).tail(n - j + 1) -= q * nu.row(j).tail(n - j + 1);
+                for (i = lattice.rank - 1; i >= j; --i)
+                {
+                    lattice.nu[k][i] -= NTL::to_RR(q) * lattice.nu[j][i];
+                }
+                for (i = 0; i <= k; ++i)
+                {
+                    lattice.mu[j][i] += NTL::to_RR(q) * lattice.mu[k][i];
+                }
+                // mu.row(j).head(k + 1) += q * mu.row(k).head(k + 1);
+            }
+        }
+    }
+}
+
 void L2Reduce(HWND hWnd, UINT Msg)
 {
     const double delta_bar = (delta + 1) * 0.5;

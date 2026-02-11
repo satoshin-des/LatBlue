@@ -18,6 +18,7 @@ void ComputeGSO()
     gsoB.SetDims(lattice.rank, lattice.rank);
     lattice.mu.SetDims(lattice.rank, lattice.rank);
     lattice.B.SetLength(lattice.rank);
+    lattice.nu.SetDims(lattice.rank, lattice.rank);
     NTL::clear(gsoB);
     NTL::clear(lattice.mu);
     NTL::clear(lattice.B);
@@ -164,7 +165,7 @@ bool ENUM(const int start, const int end, NTL::vec_ZZ &v)
     v.SetLength(d);
     eps.SetLength(d);
     eps = prune(pruning, d);
-    
+
     tmp_vec.SetLength(d);
     tmp_vec[0] = 1;
     for (i = 0; i < d; ++i)
